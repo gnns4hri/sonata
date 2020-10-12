@@ -165,6 +165,9 @@ class Human(object):
     def move(self, position, relative_to=None ):
         self.dummy_handle.set_position(position, relative_to)
 
+    def stop(self):
+        self.dummy_handle.set_position([0,0,0], relative_to=self.handle)
+
     def get_position(self, relative_to=None):
         return self.handle.get_position(relative_to=relative_to)
 

@@ -40,12 +40,12 @@ class HumanMovementRandomiser(object):
         self.friend = friend
 
 
-    def update(self,position_list,boundary,relation_to_human_map,relations_moving_humans):
+    def update(self,position_list,boundary,relation_to_human_map,relations_moving_humans, robot_position):
         if not self.moving_alone and self.friend is None:
             return
 
+        pos1 = self.human.get_position()
         if not self.moving_alone:
-            pos1 = self.human.get_position()
             pos2 = self.friend.get_position()
             center = (pos1+pos2)/2.0
             length = math.sqrt(sum([(a - b) ** 2 for a, b in zip(pos1, pos2)]))
@@ -73,6 +73,15 @@ class HumanMovementRandomiser(object):
             self.human.move([px, py, -1.])
             if not self.moving_alone:
                 self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
+        else:
+            distance1_to_robot = math.sqrt((pos1[0]-robot_position[0])**2 + (pos1[1]-robot_position[1])**2)
+            distance2_to_robot = distance1_to_robot
+            if not self.moving_alone:
+                distance2_to_robot = math.sqrt((pos2[0]-robot_position[0])**2 + (pos2[1]-robot_position[1])**2)
+            if distance1_to_robot<1. or distance2_to_robot<1.:
+                self.human.stop()
+                if not self.moving_alone:
+                    self.friend.stop()
 
 
     def check_collision_position(self,pose,position_list):
@@ -486,9 +495,9 @@ class SODA():
         #Update humans' trajectories
         for i,h in enumerate(self.wandering_humans):
             if i in self.relation_to_human_map.keys():
-                h.update(self.position_list,self.boundary,self.relation_to_human_map[i],self.relations_moving_humans)
+                h.update(self.position_list,self.boundary,self.relation_to_human_map[i],self.relations_moving_humans, robot_position)
             else:
-                h.update(self.position_list,self.boundary,None,None)
+                h.update(self.position_list,self.boundary,None,None, robot_position)
 
         #Add objects
         for id_available, obj in zip(self.tables_IND, self.data['table']):
