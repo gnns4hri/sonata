@@ -534,6 +534,7 @@ class SODA():
             obj2.x, obj2.y, _ = obj.get_position(relative_to=self.robot)
             obj2.angle = -obj.get_orientation(relative_to=self.robot)[2]
             obj_shape = obj.get_model_bounding_box()
+
             obj_w = obj_shape[1]-obj_shape[0]
             obj_h = obj_shape[3]-obj_shape[2]
             obj2.bbx1 = obj_shape[0] + obj_w/4.
