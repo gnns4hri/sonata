@@ -55,24 +55,7 @@ class HumanMovementRandomiser(object):
         t = time.time()
         if t-self.last_update > self.period:
             self.last_update = t
-            px = 6.*(random.random()-0.5)
-            py = 6.*(random.random()-0.5)
-            pose = [px,py]
-            collision = True
-
-            while collision:
-                px = 6.*(random.random()-0.5)
-                py = 6.*(random.random()-0.5)
-                pose = [px,py]
-                collision = self.check_collision_position(pose,position_list)
-
-                point = Point(px,py)
-                if not contained_with_radius(boundary, point, human_radius):
-                    collision = True
-
-            self.human.move([px, py, -1.])
-            if not self.moving_alone:
-                self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
+            self.move_human(position_list, boundary)
         else:
             distance1_to_robot = math.sqrt((pos1[0]-robot_position[0])**2 + (pos1[1]-robot_position[1])**2)
             distance2_to_robot = distance1_to_robot
@@ -82,6 +65,27 @@ class HumanMovementRandomiser(object):
                 self.human.stop()
                 if not self.moving_alone:
                     self.friend.stop()
+
+    def move_human(self, position_list, boundary):
+        px = 6.*(random.random()-0.5)
+        py = 6.*(random.random()-0.5)
+        pose = [px,py]
+        collision = True
+
+        while collision:
+            px = 6.*(random.random()-0.5)
+            py = 6.*(random.random()-0.5)
+            pose = [px,py]
+            collision = self.check_collision_position(pose,position_list)
+
+            point = Point(px,py)
+            if not contained_with_radius(boundary, point, human_radius):
+                collision = True
+
+        self.human.move([px, py, -1.])
+        if not self.moving_alone:
+            self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
+
 
 
     def check_collision_position(self,pose,position_list):
