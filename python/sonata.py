@@ -552,8 +552,8 @@ class SODA():
         #add robots as an object
         obj3 = ObjectT()
         obj3.id = -2
-        obj3.x, obj3.y, _ = self.robot.get_position(relative_to=self.robot)
-        obj3.angle = 0
+        obj3.x, obj3.y, _ = self.robot.get_position()
+        obj3.angle = -self.robot.get_orientation()[2]
         obj_shape = [1,1,1,1]
         obj3.bbx1 = obj_shape[0]
         obj3.bbx2 = obj_shape[1]

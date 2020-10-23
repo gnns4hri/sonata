@@ -253,7 +253,8 @@ class SpecificWorker(GenericWorker):
         if not self.on_a_mission or not self.new_goal:
             return
 
-        proximity = math.sqrt(sum([(a - b) ** 2 for a, b in zip(self.robot_coordinates, self.goal_coordinates)]))
+        proximity = math.sqrt(self.goal_coordinates[0] ** 2 + self.goal_coordinates[1] ** 2)
+        
         if proximity <= self.threshold:
             self.regenerate_slot()
             return
@@ -304,7 +305,7 @@ class SpecificWorker(GenericWorker):
         
         control_flag = 0
 
-        proximity = math.sqrt(sum([(a - b) ** 2 for a, b in zip(self.robot_coordinates, self.goal_coordinates)]))
+        proximity = math.sqrt(self.goal_coordinates[0] ** 2 + self.goal_coordinates[1] ** 2)
 
 
         if time.time()-self.last_saved_time > self.save_interval:
