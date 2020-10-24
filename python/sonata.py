@@ -61,7 +61,7 @@ class HumanMovementRandomiser(object):
             distance2_to_robot = distance1_to_robot
             if not self.moving_alone:
                 distance2_to_robot = math.sqrt((pos2[0]-robot_position[0])**2 + (pos2[1]-robot_position[1])**2)
-            if distance1_to_robot<1. or distance2_to_robot<1.:
+            if distance1_to_robot<1.5 or distance2_to_robot<1.5:
                 self.human.stop()
                 if not self.moving_alone:
                     self.friend.stop()
@@ -461,8 +461,11 @@ class SODA():
 
         for i in range(num_relations):
 
-            relation_type = random.randint(0,3) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
-            relation_priority_list = [ (i+relation_type)%4 for i in range(4)]
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # temporal remove of two wandering humans interacting!!!!
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+            relation_type = random.randint(0,2) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
+            relation_priority_list = [ (i+relation_type)%3 for i in range(3)]
             for rel in relation_priority_list:
                 if self.create_interaction(rel, n_humans, length, breadth):
                     break
