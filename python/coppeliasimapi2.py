@@ -108,7 +108,7 @@ class RelationObject(object):
     def __init__(self,x,y,z,pitch,yaw,roll,length):
         super(RelationObject,self).__init__()
         ss = Shape.create(type=PrimitiveShape.CYLINDER, 
-                              color=[1,0,0], size=[0.01, 0.02, length],
+                              color=[1,0,0], size=[0.03, 0.02, length],
                               position=[x, y, 2.5],orientation=[3.14,0,3.14])
 
         ss.set_color([0, 0, 1])

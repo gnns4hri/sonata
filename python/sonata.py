@@ -544,10 +544,10 @@ class SODA():
 
             obj_w = obj_shape[1]*2
             obj_h = obj_shape[3]*2
-            obj2.bbx1 = obj_shape[0] + obj_w/4.
-            obj2.bbx2 = obj_shape[1] - obj_w/4.
-            obj2.bby1 = obj_shape[2] + obj_h/4.
-            obj2.bby2 = obj_shape[3] - obj_h/4.
+            obj2.bbx1 = obj_w #obj_shape[0] + obj_w/4.
+            obj2.bbx2 = obj_w #obj_shape[1] - obj_w/4.
+            obj2.bby1 = obj_h #obj_shape[2] + obj_h/4.
+            obj2.bby2 = obj_h #obj_shape[3] - obj_h/4.
             objects.append(obj2)
             #id_available += 1
 
