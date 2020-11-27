@@ -563,8 +563,8 @@ class GenerateDataset(DGLDataset):
                 g.features[:, all_features.index('is_first_frame')] = 1
             g.features[:, all_features.index('time_left')] = 1. / (i_frame + g_i + 1)
             f_list.append(g.features)
-            typemap_list.append(g.typeMap)
-            coordinates_list.append(g.position_by_id)
+            typemap_list.append([g.typeMap])
+            coordinates_list.append([g.position_by_id])
             # Add temporal edges
             src_list.append(g.src_nodes + (offset * g_i))
             dst_list.append(g.dst_nodes + (offset * g_i))
@@ -591,13 +591,14 @@ class GenerateDataset(DGLDataset):
                 dst_list.append(th.IntTensor(new_dst_list))
                 edge_types_list.append(th.LongTensor(new_etypes_list))
                 edge_norms_list.append(th.Tensor(new_enorms_list))
-            g_i += 1
+            
             
             for f in new_features:
-                if graphs_in_interval.index(g) == new_features.index(f):
+                if g_i == new_features.index(f):
                     g.features[:, all_features.index(f)] = 1
                 else:
                     g.features[:, all_features.index(f)] = 0
+            g_i += 1
 
         # Create merged graph:
         

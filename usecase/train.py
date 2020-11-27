@@ -322,7 +322,7 @@ if __name__ == '__main__':
         print("If you want to retrain, use \"python3 train.py file.prms file.tch\"")
         best_loss = main('train_set.txt', 'dev_set.txt', 'test_set.txt',
                          graph_type='1',  #
-                         net='gatmc',
+                         net='rgcn',
                          epochs=500,
                          patience=5,
                          batch_size=40,

@@ -63,7 +63,7 @@ class SpecificWorker(GenericWorker):
         os.system('bash ../joystick.sh &')
         os.system('bash ../simulator.sh &')
         self.timer.timeout.connect(self.compute)
-        self.TEST_MODE = False
+        self.TEST_MODE = True
         self.i_frame = 0
         if self.TEST_MODE:
             self.model = SocNavAPI('.', None)
@@ -283,7 +283,7 @@ class SpecificWorker(GenericWorker):
                         break
 
             if len(new_data)>=1:
-                graph = GenerateDataset(new_data, 'run', '1', i_frame = self.i_frame)
+                graph = GenerateDataset(new_data, '1', 'run', i_frame = self.i_frame)
                 results = self.model.predictOneGraph(graph)[0]
                 adv = results[0].item()*3.5
                 rot = results[2].item()*4.
