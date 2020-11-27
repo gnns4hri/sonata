@@ -32,12 +32,16 @@ def describe_model(model):
         print(param_tensor, "\t", model.state_dict()[param_tensor].size())
 
 
-def collate(sample):
-    graphs, feats, labels = map(list, zip(*sample))
-    graph = dgl.batch(graphs)
-    feats = torch.from_numpy(np.concatenate(feats))
-    labels = torch.from_numpy(np.concatenate(labels))
-    return graph, feats, labels
+def collate(batch):
+    graphs = [batch[0][0]]
+    labels = batch[0][1]
+    for graph, label in batch[1:]:
+        graphs.append(graph)
+        labels = torch.cat([labels, label], dim=0)
+    batched_graphs = dgl.batch(graphs).to(torch.device(device))
+    labels.to(torch.device(device))
+
+    return batched_graphs, labels
 
 
 def evaluate(feats, model, subgraph, labels, loss_fcn, fw, net):
@@ -134,14 +138,14 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
     for _ in range(5):
         print(f'TIME {time_dataset_b - time_dataset_a}')
 
-    num_rels = train_dataset.num_rels
+    num_rels = len(socnavData.get_relations())
     cur_step = 0
     best_loss = -1
     n_classes = num_hidden[-1]
     print('Number of classes:  {}'.format(n_classes))
-    num_feats = train_dataset[0][0].features.shape[1]
+    num_feats = train_dataset.graphs[0].ndata['h'].shape[1]
     print('Number of features: {}'.format(num_feats))
-    g = dgl.batch(train_dataset.data)
+    g = dgl.batch(train_dataset.graphs)
     num_hidden_layers_rgcn = 3
     num_hidden_layers_gat = 3
     num_hidden_layer_pairs = 3
@@ -158,8 +162,8 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
                  net,
                  K,                # sage filters
                  heads,
-                 train_dataset.num_rels,
-                 train_dataset.num_rels,
+                 num_rels,
+                 num_rels,
                  g,
                  residual,
                  attn_drop,
@@ -184,10 +188,10 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
         model.train()
         loss_list = []
         for batch, data in enumerate(train_dataloader):
-            subgraph, feats, labels = data
+            subgraph, labels = data
             subgraph.set_n_initializer(dgl.init.zero_initializer)
             subgraph.set_e_initializer(dgl.init.zero_initializer)
-            feats = feats.to(device)
+            feats = subgraph.ndata['h'].to(device)
             labels = labels.to(device)
             if fw == 'dgl':
                 model.gnn_object.g = subgraph
@@ -243,10 +247,10 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
             score_list = []
             val_loss_list = []
             for batch, valid_data in enumerate(valid_dataloader):
-                subgraph, feats, labels = valid_data
+                subgraph, labels = valid_data
                 subgraph.set_n_initializer(dgl.init.zero_initializer)
                 subgraph.set_e_initializer(dgl.init.zero_initializer)
-                feats = feats.to(device)
+                feats = subgraph.ndata['h'].to(device)
                 labels = labels.to(device)
                 score, val_loss = evaluate(feats.float(), model, subgraph, labels.float(), loss_fcn, fw, net)
                 score_list.append(score)
@@ -292,10 +296,10 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
                     break
     test_score_list = []
     for batch, test_data in enumerate(test_dataloader):
-        subgraph, feats, labels = test_data
+        subgraph, labels = test_data
         subgraph.set_n_initializer(dgl.init.zero_initializer)
         subgraph.set_e_initializer(dgl.init.zero_initializer)
-        feats = feats.to(device)
+        feats = subgraph.ndata['h'].to(device)
         labels = labels.to(device)
         test_score_list.append(evaluate(feats, model, subgraph, labels.float(), loss_fcn, fw, net)[1])
     print("MSE for the test set {}".format(np.array(test_score_list).mean()))

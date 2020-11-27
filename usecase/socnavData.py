@@ -21,7 +21,7 @@ limit = 100 #149999  # 31191
 
 path_saves = 'saves/'
 graphData = namedtuple('graphData', ['src_nodes', 'dst_nodes', 'n_nodes', 'features', 'edge_types',
-                                     'edge_norms', 'position_by_id', 'typeMap', 'labels'])
+                                     'edge_norms', 'position_by_id', 'typeMap', 'labels', 'w_segments'])
 
 N_INTERVALS = 3
 FRAMES_INTERVAL = 1.
@@ -93,7 +93,7 @@ def get_features():
 
 # So far there is only one alternative implemented that I think is the most complete
 
-def initializeAlt1(data):
+def initializeAlt1(data, w_segments=[]):
     # Initialize variables
     rels, num_rels = get_relations()
     edge_types = []  # List to store the relation of each edge
@@ -104,7 +104,6 @@ def initializeAlt1(data):
     Wall = namedtuple('Wall', ['orientation', 'xpos', 'ypos'])
     walls = []
     i_w = 0
-    w_segments = []
     for wall_segment in data['walls']:
         p1 = np.array([wall_segment["x1"], wall_segment["y1"]]) * 100
         p2 = np.array([wall_segment["x2"], wall_segment["y2"]]) * 100
@@ -367,7 +366,7 @@ def initializeAlt1(data):
     edge_types = th.LongTensor(edge_types)
     edge_norms = th.Tensor(edge_norms)
 
-    return src_nodes, dst_nodes, n_nodes, features, edge_types, edge_norms, position_by_id, typeMap, labels
+    return src_nodes, dst_nodes, n_nodes, features, edge_types, edge_norms, position_by_id, typeMap, labels, w_segments
 
 
 #################################################################
@@ -430,6 +429,7 @@ class GenerateDataset(DGLDataset):
         frame_new = data[0]
         frames_in_interval.append(frame_new)
         graph_new_data = graphData(*self.dataloader(frame_new))
+        w_segments = graph_new_data.w_segments
         graph_new_data.features[:, all_features.index('is_first_frame')] = 1
         graph_new_data.features[:, all_features.index('time_left')] = 1
         graphs_in_interval.append(graph_new_data)
@@ -451,7 +451,7 @@ class GenerateDataset(DGLDataset):
             if linen > self.end_line >= 0:
                 continue
             try:
-                graph_new_data = graphData(*self.dataloader(frame_new))
+                graph_new_data = graphData(*self.dataloader(frame_new, w_segments))
                 graph_new_data.features[:, all_features.index('time_left')] = 1. / (i_frame + 1.)
                 frames_in_interval.insert(0, frame_new)
                 graphs_in_interval.insert(0, graph_new_data)
@@ -471,15 +471,13 @@ class GenerateDataset(DGLDataset):
                 print("g.n_nodes", graph_new_data.n_nodes)
                 for g in graphs_in_interval:
                     f_list.append(g.features)
-                    typemap_list.append(g.typeMap)
-                    coordinates_list.append(g.position_by_id)
+                    typemap_list.append([g.typeMap])
+                    coordinates_list.append([g.position_by_id])
                     # Add temporal edges
                     src_list.append(g.src_nodes + (offset * g_i))
                     dst_list.append(g.dst_nodes + (offset * g_i))
                     edge_types_list.append(g.edge_types)
                     edge_norms_list.append(g.edge_norms)
-
-                    
 
                     if g_i > 0:
                         # Temporal connections and edges labels
@@ -487,8 +485,6 @@ class GenerateDataset(DGLDataset):
                         new_dst_list = []
                         new_etypes_list = []
                         new_enorms_list = []
-
-                        
 
                         for node in range(g.n_nodes):
                             new_src_list.append(node + offset*(g_i-1))
@@ -532,6 +528,7 @@ class GenerateDataset(DGLDataset):
                 # Append final data
                 self.graphs.append(final_graph)
                 self.labels.append(graphs_in_interval[0].labels)
+                print("typemap_list",typemap_list)
                 self.data['typemaps'].append(np.concatenate(typemap_list, axis=0))
                 self.data['coordinates'].append(np.concatenate(coordinates_list, axis=0))
 
@@ -544,10 +541,11 @@ class GenerateDataset(DGLDataset):
         all_features, n_features = get_features()
         new_features = ['is_t_0', 'is_t_m1', 'is_t_m2']
         graph_data = graphData(*self.dataloader(path[0]))
-
+        w_segments = graph_data.w_segments
+        
         graphs_in_interval = [graph_data]
         for i in range(1, len(path)):
-            graphs_in_interval.append(graphData(*self.dataloader(path[i])))
+            graphs_in_interval.append(graphData(*self.dataloader(path[i], w_segments)))
 
         f_list = []
         src_list = []
