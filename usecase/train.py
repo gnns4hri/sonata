@@ -17,8 +17,6 @@ sys.path.append('./nets')
 from select_gnn import SELECT_GNN
 
 
-
-
 if torch.cuda.is_available() is True:
     device = torch.device('cuda')
 else:
@@ -138,7 +136,8 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
     for _ in range(5):
         print(f'TIME {time_dataset_b - time_dataset_a}')
 
-    num_rels = len(socnavData.get_relations())
+    _, num_rels = socnavData.get_relations()
+    num_rels +=  (socnavData.N_INTERVALS-1)*2
     cur_step = 0
     best_loss = -1
     n_classes = num_hidden[-1]
@@ -325,14 +324,14 @@ if __name__ == '__main__':
                          net='rgcn',
                          epochs=500,
                          patience=5,
-                         batch_size=40,
-                         num_hidden=[50, 40, 30, 15, 3], #[25, 20, 20, 15, 10, 3],
-                         heads=[15,15, 1, 1, 10], #[15, 15, 10, 8, 8, 6],
+                         batch_size=1, #40,
+                         num_hidden=[50, 25, 3], #[50, 40, 30, 15, 3], #[25, 20, 20, 15, 10, 3],
+                         heads=[15, 15, 1], #[15,15, 1, 1, 10], #[15, 15, 10, 8, 8, 6],
                          residual=False,
                          lr=0.0005,
                          weight_decay=0.000000001,
                          nonlinearity='elu',
-                         gnn_layers=5, #6,
+                         gnn_layers=3, #6,
                          in_drop=0.,
                          alpha=0.12,
                          attn_drop=0.,

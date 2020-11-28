@@ -501,18 +501,14 @@ class GenerateDataset(DGLDataset):
                         edge_types_list.append(th.LongTensor(new_etypes_list))
                         edge_norms_list.append(th.Tensor(new_enorms_list))
 
-                    g_i += 1
-                    # for f in new_features:
-                    #     print("graphs_in_interval.index(g)", graphs_in_interval.index(g), len(g.features[0]))
-                    #     print("new_features.index(f)", new_features.index(f), f)
-                    #     if graphs_in_interval.index(g) == new_features.index(f):
-                    #         g.features[:, all_features.index(f)] = 1
-                    #     else:
-                    #         g.features[:, all_features.index(f)] = 0
+                    for f in new_features:
+                        if g_i == new_features.index(f):
+                            g.features[:, all_features.index(f)] = 1
+                        else:
+                            g.features[:, all_features.index(f)] = 0
 
+                    g_i += 1
                 # Create merged graph:
-                print("nnodes", graphs_in_interval[0].n_nodes, g_i)
-                print(src_list)
                 src_nodes = th.cat(src_list, dim=0)
                 dst_nodes = th.cat(dst_list, dim=0)
                 edge_types = th.cat(edge_types_list, dim=0)
@@ -528,7 +524,6 @@ class GenerateDataset(DGLDataset):
                 # Append final data
                 self.graphs.append(final_graph)
                 self.labels.append(graphs_in_interval[0].labels)
-                print("typemap_list",typemap_list)
                 self.data['typemaps'].append(np.concatenate(typemap_list, axis=0))
                 self.data['coordinates'].append(np.concatenate(coordinates_list, axis=0))
 
