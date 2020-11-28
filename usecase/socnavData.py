@@ -17,7 +17,7 @@ from dgl.data.utils import save_info, load_info
 import numpy as np
 
 threshold_human_wall = 1.5
-limit = 100 #149999  # 31191
+limit = 4000 #149999  # 31191
 
 path_saves = 'saves/'
 graphData = namedtuple('graphData', ['src_nodes', 'dst_nodes', 'n_nodes', 'features', 'edge_types',
@@ -433,7 +433,6 @@ class GenerateDataset(DGLDataset):
         graph_new_data.features[:, all_features.index('is_first_frame')] = 1
         graph_new_data.features[:, all_features.index('time_left')] = 1
         graphs_in_interval.append(graph_new_data)
-        print("g.n_nodes first", graph_new_data.n_nodes)
         i_frame = 0
         for frame in data[1:]:
             frame_new = frame
@@ -468,7 +467,6 @@ class GenerateDataset(DGLDataset):
                 _, num_rels = get_relations()
                 g_i = 0
                 offset = graphs_in_interval[0].n_nodes
-                print("g.n_nodes", graph_new_data.n_nodes)
                 for g in graphs_in_interval:
                     f_list.append(g.features)
                     typemap_list.append([g.typeMap])
