@@ -393,6 +393,10 @@ class GenerateDataset(DGLDataset):
         self.limit = loc_limit
         self.assign_data = assign_data
         self.i_frame = i_frame
+        self.force_reload = force_reload
+
+        if self.mode == 'test':
+            self.force_reload = True
 
         if self.alt == '1':
             self.dataloader = initializeAlt1
@@ -409,7 +413,7 @@ class GenerateDataset(DGLDataset):
         if self.debug:
             self.limit = 1 + (0 if init_line == -1 else init_line)
 
-        super(GenerateDataset, self).__init__("SNGNN", raw_dir=raw_dir, force_reload=force_reload, verbose=verbose)
+        super(GenerateDataset, self).__init__(self.mode, raw_dir=raw_dir, force_reload=self.force_reload, verbose=verbose)
 
     def get_dataset_name(self):
         graphs_path = 'graphs_' + self.mode + '_s_' + str(limit) + '.bin'
@@ -667,14 +671,14 @@ class GenerateDataset(DGLDataset):
                 self.labels.append(g.labels[0])
                 self.data.append(g.data[0])
 
-        elif type(self.path) == list and type(self.path[0]) == str:
-            graph_data = graphData(*self.dataloader(json.loads(self.path[0])))
-            graph = dgl.graph((graph_data.src_nodes, graph_data.dst_nodes), num_nodes=graph_data.n_nodes,
-                              idtype=th.int32, device=self.device)
-            self.graphs.append(graph)
-            self.labels.append(graph_data.labels)
-            self.data['typemaps'].append(graph_data.typeMap)
-            self.data['coordinates'].append(graph_data.position_by_id)
+        # elif type(self.path) == list and type(self.path[0]) == str:
+        #     graph_data = graphData(*self.dataloader(json.loads(self.path[0])))
+        #     graph = dgl.graph((graph_data.src_nodes, graph_data.dst_nodes), num_nodes=graph_data.n_nodes,
+        #                       idtype=th.int32, device=self.device)
+        #     self.graphs.append(graph)
+        #     self.labels.append(graph_data.labels)
+        #     self.data['typemaps'].append(graph_data.typeMap)
+        #     self.data['coordinates'].append(graph_data.position_by_id)
 
         elif type(self.path) == list and len(self.path) >= 1:
             self.load_one_graph(self.path, self.i_frame)
