@@ -878,36 +878,57 @@ class GenerateDataset(DGLDataset):
             coordinates_list = []
             edge_types_list = []
             edge_norms_list = []
+            typeMapRoomShift = dict()
+            coordinates_roomShift = dict()
+            n_nodes = 0
             _, num_rels = get_relations(self.alt)
             g_i = 0
             offset = graphs_in_interval[0].n_nodes
             for g in graphs_in_interval:
                 if self.grid_data is not None:
-                    typeMapRoomShift = dict()
-                    coordinates_roomShift = dict()
-
-                    for key in g.typeMap:
-                        typeMapRoomShift[key + len(self.grid_data.typeMap) + (offset*g_i)] = g.typeMap[key]
-                        coordinates_roomShift[key + len(self.grid_data.position_by_id) + (offset*g_i)] = \
-                            g.position_by_id[key]
-
-                    src_list.append(g.src_nodes + (offset * g_i) + self.grid_data.n_nodes)
-                    dst_list.append(g.dst_nodes + (offset * g_i) + self.grid_data.n_nodes)
-
                     if g == 0:
-                        f_list.append(self.grid_data.features)
-                        position_by_id = {**self.grid_data.position_by_id, **coordinates_roomShift}
-                        typeMap = {**self.grid_data.position_by_id, **typeMapRoomShift}
+                        # Add links and their labels of grid graph and first room graph
+                        src_list.append(self.grid_data.n_nodes)
+                        src_list.append(g.src_nodes)
+                        dst_list.append(self.grid_data.n_nodes)
+                        dst_list.append(g.dst_nodes)
 
+                        edge_types_list.append(self.grid_data.edge_types)
+                        edge_types_list.append(g.edge_types)
+                        edge_norms_list.append(self.grid_data.edge_norms)
+                        edge_norms_list.append(g.edge_norms)
+
+                        # Add features of the nodes of the mentioned graphs
+                        f_list.append(self.grid_data.features)
                         f_list.append(g.features)
-                        typemap_list.append([typeMap])
+
+                        # Shift IDs of the typemap and coordinates lists
+                        for key in g.typeMap:
+                            typeMapRoomShift[key + len(self.grid_data.typeMap)] = g.typeMap[key]
+                            coordinates_roomShift[key + len(self.grid_data.position_by_id)] = \
+                                g.position_by_id[key]
+
+                        # Add shifted typemaps and coordinates
+                        position_by_id = {**self.grid_data.position_by_id, **coordinates_roomShift}
                         coordinates_list.append([position_by_id])
-                        # Add temporal edges
+
+                        typeMap = {**self.grid_data.position_by_id, **typeMapRoomShift}
+                        typemap_list.append([typeMap])
+
+                        # Update number of nodes
+                        n_nodes = g.n_nodes + self.grid_data.n_nodes
+
+                    elif g_i > 0:
+                        # TODO
+                        # Shift IDs of the typemap and coordinates lists
+                        for key in g.typeMap:
+                            typeMapRoomShift[key + len(self.grid_data.typeMap) + (offset * g_i)] = g.typeMap[key]
+                            coordinates_roomShift[key + len(self.grid_data.position_by_id) + (offset * g_i)] = \
+                                g.position_by_id[key]
                         src_list.append(g.src_nodes + (offset * g_i) + self.grid_data.n_nodes)
                         dst_list.append(g.dst_nodes + (offset * g_i) + self.grid_data.n_nodes)
                         edge_types_list.append(g.edge_types)
                         edge_norms_list.append(g.edge_norms)
-                    elif g_i > 0:
                         # Temporal connections and edges labels
                         new_src_list = []
                         new_dst_list = []
@@ -918,14 +939,19 @@ class GenerateDataset(DGLDataset):
                             new_dst_list.append(node + offset * g_i)
                             new_etypes_list.append(num_rels + (g_i - 1) * 2)
                             new_enorms_list.append([1.])
+
                             new_src_list.append(node + offset * g_i)
                             new_dst_list.append(node + offset * (g_i - 1))
                             new_etypes_list.append(num_rels + (g_i - 1) * 2 + 1)
                             new_enorms_list.append([1.])
+
                         src_list.append(th.IntTensor(new_src_list))
                         dst_list.append(th.IntTensor(new_dst_list))
                         edge_types_list.append(th.LongTensor(new_etypes_list))
                         edge_norms_list.append(th.Tensor(new_enorms_list))
+
+                        #  Update number of nodes
+                        n_nodes += g.n_nodes
                     for f in new_features:
                         if g_i == new_features.index(f):
                             g.features[:, all_features.index(f)] = 1
@@ -933,6 +959,7 @@ class GenerateDataset(DGLDataset):
                             g.features[:, all_features.index(f)] = 0
                     g_i += 1
                 else:
+                    n_nodes += g.n_nodes
                     f_list.append(g.features)
                     typemap_list.append([g.typeMap])
                     coordinates_list.append([g.position_by_id])
@@ -974,7 +1001,7 @@ class GenerateDataset(DGLDataset):
                 edge_types = th.cat(edge_types_list, dim=0)
                 edge_norms = th.cat(edge_norms_list, dim=0)
                 final_graph = dgl.graph((src_nodes, dst_nodes),
-                                        num_nodes=graphs_in_interval[0].n_nodes*g_i,
+                                        num_nodes=n_nodes,
                                         idtype=th.int32, device=self.device)
 
                 # Add merged features and update edge labels:
