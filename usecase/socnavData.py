@@ -294,6 +294,7 @@ def initializeAlt1(data, w_segments=[]):
     # room (id 0)
     room_id = 0
     typeMap[room_id] = 'r'  # 'r' for 'room'
+    position_by_id[room_id] = [0, 0]
     features[room_id, all_features.index('room')] = 1.
     features[room_id, all_features.index('room_humans')] = len(data['people']) / MAX_HUMANS
     features[room_id, all_features.index('room_humans2')] = (len(data['people']) ** 2) / (MAX_HUMANS ** 2)
