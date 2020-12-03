@@ -874,18 +874,22 @@ class GenerateDataset(DGLDataset):
             f_list = []
             src_list = []
             dst_list = []
-            typemap_list = []
-            coordinates_list = []
             edge_types_list = []
             edge_norms_list = []
-            typeMapRoomShift = dict()
-            coordinates_roomShift = dict()
+            typeMap = dict()
+            coordinates = dict()
             n_nodes = 0
-            _, num_rels = get_relations(self.alt)
+            rels, num_rels = get_relations(self.alt)
             g_i = 0
             offset = graphs_in_interval[0].n_nodes
             for g in graphs_in_interval:
+                # Alternatives with grid
                 if self.grid_data is not None:
+                    # Shift IDs of the typemap and coordinates lists
+                    for key in g.typeMap:
+                        typeMap[key + len(self.grid_data.typeMap) + (offset * g_i)] = g.typeMap[key]
+                        coordinates[key + len(self.grid_data.position_by_id) + (offset * g_i)] = g.position_by_id[key]
+
                     if g == 0:
                         # Add links and their labels of grid graph and first room graph
                         src_list.append(self.grid_data.n_nodes)
@@ -902,29 +906,16 @@ class GenerateDataset(DGLDataset):
                         f_list.append(self.grid_data.features)
                         f_list.append(g.features)
 
-                        # Shift IDs of the typemap and coordinates lists
-                        for key in g.typeMap:
-                            typeMapRoomShift[key + len(self.grid_data.typeMap)] = g.typeMap[key]
-                            coordinates_roomShift[key + len(self.grid_data.position_by_id)] = \
-                                g.position_by_id[key]
-
-                        # Add shifted typemaps and coordinates
-                        position_by_id = {**self.grid_data.position_by_id, **coordinates_roomShift}
-                        coordinates_list.append([position_by_id])
-
-                        typeMap = {**self.grid_data.position_by_id, **typeMapRoomShift}
-                        typemap_list.append([typeMap])
+                        # Add grid graph coordinates and typemaps
+                        coordinates = {**self.grid_data.position_by_id, **coordinates}
+                        typeMap = {**self.grid_data.position_by_id, **typeMap}
 
                         # Update number of nodes
                         n_nodes = g.n_nodes + self.grid_data.n_nodes
 
                     elif g_i > 0:
-                        # TODO
-                        # Shift IDs of the typemap and coordinates lists
-                        for key in g.typeMap:
-                            typeMapRoomShift[key + len(self.grid_data.typeMap) + (offset * g_i)] = g.typeMap[key]
-                            coordinates_roomShift[key + len(self.grid_data.position_by_id) + (offset * g_i)] = \
-                                g.position_by_id[key]
+                        # Add edges and features of the new graph.
+                        f_list.append(g.features)
                         src_list.append(g.src_nodes + (offset * g_i) + self.grid_data.n_nodes)
                         dst_list.append(g.dst_nodes + (offset * g_i) + self.grid_data.n_nodes)
                         edge_types_list.append(g.edge_types)
@@ -935,13 +926,13 @@ class GenerateDataset(DGLDataset):
                         new_etypes_list = []
                         new_enorms_list = []
                         for node in range(g.n_nodes):
-                            new_src_list.append(node + offset * (g_i - 1))
-                            new_dst_list.append(node + offset * g_i)
+                            new_src_list.append(node + (offset * (g_i - 1)) + self.grid_data.n_nodes)
+                            new_dst_list.append(node + (offset * g_i) + self.grid_data.n_nodes)
                             new_etypes_list.append(num_rels + (g_i - 1) * 2)
                             new_enorms_list.append([1.])
 
-                            new_src_list.append(node + offset * g_i)
-                            new_dst_list.append(node + offset * (g_i - 1))
+                            new_src_list.append(node + (offset * g_i) + self.grid_data.n_nodes)
+                            new_dst_list.append(node + (offset * (g_i - 1)) + self.grid_data.n_nodes)
                             new_etypes_list.append(num_rels + (g_i - 1) * 2 + 1)
                             new_enorms_list.append([1.])
 
@@ -952,17 +943,39 @@ class GenerateDataset(DGLDataset):
 
                         #  Update number of nodes
                         n_nodes += g.n_nodes
+
+                    # Add new features for the graphs of the frames
                     for f in new_features:
                         if g_i == new_features.index(f):
                             g.features[:, all_features.index(f)] = 1
                         else:
                             g.features[:, all_features.index(f)] = 0
-                    g_i += 1
+
+                    # Connect each graph frame to the grid:
+                    for r_n_id in range(1, g.n_nodes):
+                        r_n_type = g.typeMap[r_n_id]
+                        x, y = g.position_by_id[r_n_id]
+                        closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width, grid_width, 25.,
+                                                                   x * 1000,
+                                                                   y * 1000)
+                        for g_id in closest_grid_nodes_id:
+                            src_list.append(th.IntTensor(g_id))
+                            dst_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset*g_i)))
+                            edge_types_list.append(th.LongTensor([rels.index('g_' + r_n_type)]))
+                            edge_norms_list.append(th.Tensor([[1.]]))
+
+                            src_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset*g_i)))
+                            dst_list.append(th.IntTensor(g_id))
+                            edge_types_list.append(th.LongTensor([rels.index(r_n_type + '_g')]))
+
+                # Alternatives without grid
                 else:
+                    # Shift IDs of the typemap and coordinates lists
+                    for key in g.typeMap:
+                        typeMap[key + (offset * g_i)] = g.typeMap[key]
+                        coordinates[key + (offset * g_i)] = g.position_by_id[key]
                     n_nodes += g.n_nodes
                     f_list.append(g.features)
-                    typemap_list.append([g.typeMap])
-                    coordinates_list.append([g.position_by_id])
                     # Add temporal edges
                     src_list.append(g.src_nodes + (offset * g_i))
                     dst_list.append(g.dst_nodes + (offset * g_i))
@@ -992,7 +1005,7 @@ class GenerateDataset(DGLDataset):
                             g.features[:, all_features.index(f)] = 1
                         else:
                             g.features[:, all_features.index(f)] = 0
-                    g_i += 1
+                g_i += 1
 
             try:
                 # Create merged graph:
@@ -1011,8 +1024,8 @@ class GenerateDataset(DGLDataset):
                 # Append final data
                 self.graphs.append(final_graph)
                 self.labels.append(graphs_in_interval[0].labels)
-                self.data['typemaps'].append(np.concatenate(typemap_list, axis=0))
-                self.data['coordinates'].append(np.concatenate(coordinates_list, axis=0))
+                self.data['typemaps'].append(typeMap)
+                self.data['coordinates'].append(coordinates)
 
             except Exception:
                 print(frame)
@@ -1032,75 +1045,165 @@ class GenerateDataset(DGLDataset):
         f_list = []
         src_list = []
         dst_list = []
-        typemap_list = []
-        coordinates_list = []
         edge_types_list = []
         edge_norms_list = []
-        _, num_rels = get_relations(self.alt)
+        typeMap = dict()
+        coordinates = dict()
+        n_nodes = 0
+        rels, num_rels = get_relations(self.alt)
         g_i = 0
         offset = graphs_in_interval[0].n_nodes
         for g in graphs_in_interval:
-
             if (i_frame - g_i) == 0:
                 g.features[:, all_features.index('is_first_frame')] = 1
             g.features[:, all_features.index('time_left')] = 1. / (i_frame + g_i + 1)
-            f_list.append(g.features)
-            typemap_list.append([g.typeMap])
-            coordinates_list.append([g.position_by_id])
-            # Add temporal edges
-            src_list.append(g.src_nodes + (offset * g_i))
-            dst_list.append(g.dst_nodes + (offset * g_i))
-            edge_types_list.append(g.edge_types)
-            edge_norms_list.append(g.edge_norms)
-            
-            if g_i > 0:
-                # Temporal connections and edges labels
-                new_src_list = []
-                new_dst_list = []
-                new_etypes_list = []
-                new_enorms_list = []
-                for node in range(g.n_nodes):
-                    new_src_list.append(node + offset*(g_i-1))
-                    new_dst_list.append(node + offset*g_i)
-                    new_etypes_list.append(num_rels + (g_i - 1) * 2)
-                    new_enorms_list.append([1.])
+            # Alternatives with grid
+            if self.grid_data is not None:
+                # Shift IDs of the typemap and coordinates lists
+                for key in g.typeMap:
+                    typeMap[key + len(self.grid_data.typeMap) + (offset * g_i)] = g.typeMap[key]
+                    coordinates[key + len(self.grid_data.position_by_id) + (offset * g_i)] = g.position_by_id[key]
 
-                    new_src_list.append(node + offset*g_i)
-                    new_dst_list.append(node + offset*(g_i-1))
-                    new_etypes_list.append(num_rels + (g_i - 1) * 2 + 1)
-                    new_enorms_list.append([1.])
-                src_list.append(th.IntTensor(new_src_list))
-                dst_list.append(th.IntTensor(new_dst_list))
-                edge_types_list.append(th.LongTensor(new_etypes_list))
-                edge_norms_list.append(th.Tensor(new_enorms_list))
-            
-            
-            for f in new_features:
-                if g_i == new_features.index(f):
-                    g.features[:, all_features.index(f)] = 1
-                else:
-                    g.features[:, all_features.index(f)] = 0
+                if g == 0:
+                    # Add links and their labels of grid graph and first room graph
+                    src_list.append(self.grid_data.n_nodes)
+                    src_list.append(g.src_nodes)
+                    dst_list.append(self.grid_data.n_nodes)
+                    dst_list.append(g.dst_nodes)
+
+                    edge_types_list.append(self.grid_data.edge_types)
+                    edge_types_list.append(g.edge_types)
+                    edge_norms_list.append(self.grid_data.edge_norms)
+                    edge_norms_list.append(g.edge_norms)
+
+                    # Add features of the nodes of the mentioned graphs
+                    f_list.append(self.grid_data.features)
+                    f_list.append(g.features)
+
+                    # Add grid graph coordinates and typemaps
+                    coordinates = {**self.grid_data.position_by_id, **coordinates}
+                    typeMap = {**self.grid_data.position_by_id, **typeMap}
+
+                    # Update number of nodes
+                    n_nodes = g.n_nodes + self.grid_data.n_nodes
+
+                elif g_i > 0:
+                    # Add edges and features of the new graph.
+                    f_list.append(g.features)
+                    src_list.append(g.src_nodes + (offset * g_i) + self.grid_data.n_nodes)
+                    dst_list.append(g.dst_nodes + (offset * g_i) + self.grid_data.n_nodes)
+                    edge_types_list.append(g.edge_types)
+                    edge_norms_list.append(g.edge_norms)
+                    # Temporal connections and edges labels
+                    new_src_list = []
+                    new_dst_list = []
+                    new_etypes_list = []
+                    new_enorms_list = []
+                    for node in range(g.n_nodes):
+                        new_src_list.append(node + (offset * (g_i - 1)) + self.grid_data.n_nodes)
+                        new_dst_list.append(node + (offset * g_i) + self.grid_data.n_nodes)
+                        new_etypes_list.append(num_rels + (g_i - 1) * 2)
+                        new_enorms_list.append([1.])
+
+                        new_src_list.append(node + (offset * g_i) + self.grid_data.n_nodes)
+                        new_dst_list.append(node + (offset * (g_i - 1)) + self.grid_data.n_nodes)
+                        new_etypes_list.append(num_rels + (g_i - 1) * 2 + 1)
+                        new_enorms_list.append([1.])
+
+                    src_list.append(th.IntTensor(new_src_list))
+                    dst_list.append(th.IntTensor(new_dst_list))
+                    edge_types_list.append(th.LongTensor(new_etypes_list))
+                    edge_norms_list.append(th.Tensor(new_enorms_list))
+
+                    #  Update number of nodes
+                    n_nodes += g.n_nodes
+
+                # Add new features for the graphs of the frames
+                for f in new_features:
+                    if g_i == new_features.index(f):
+                        g.features[:, all_features.index(f)] = 1
+                    else:
+                        g.features[:, all_features.index(f)] = 0
+
+                # Connect each graph frame to the grid:
+                for r_n_id in range(1, g.n_nodes):
+                    r_n_type = g.typeMap[r_n_id]
+                    x, y = g.position_by_id[r_n_id]
+                    closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width, grid_width, 25.,
+                                                               x * 1000,
+                                                               y * 1000)
+                    for g_id in closest_grid_nodes_id:
+                        src_list.append(th.IntTensor(g_id))
+                        dst_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset * g_i)))
+                        edge_types_list.append(th.LongTensor([rels.index('g_' + r_n_type)]))
+                        edge_norms_list.append(th.Tensor([[1.]]))
+
+                        src_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset * g_i)))
+                        dst_list.append(th.IntTensor(g_id))
+                        edge_types_list.append(th.LongTensor([rels.index(r_n_type + '_g')]))
+
+            # Alternatives without grid
+            else:
+                # Shift IDs of the typemap and coordinates lists
+                for key in g.typeMap:
+                    typeMap[key + (offset * g_i)] = g.typeMap[key]
+                    coordinates[key + (offset * g_i)] = g.position_by_id[key]
+                n_nodes += g.n_nodes
+                f_list.append(g.features)
+                # Add temporal edges
+                src_list.append(g.src_nodes + (offset * g_i))
+                dst_list.append(g.dst_nodes + (offset * g_i))
+                edge_types_list.append(g.edge_types)
+                edge_norms_list.append(g.edge_norms)
+                if g_i > 0:
+                    # Temporal connections and edges labels
+                    new_src_list = []
+                    new_dst_list = []
+                    new_etypes_list = []
+                    new_enorms_list = []
+                    for node in range(g.n_nodes):
+                        new_src_list.append(node + offset * (g_i - 1))
+                        new_dst_list.append(node + offset * g_i)
+                        new_etypes_list.append(num_rels + (g_i - 1) * 2)
+                        new_enorms_list.append([1.])
+                        new_src_list.append(node + offset * g_i)
+                        new_dst_list.append(node + offset * (g_i - 1))
+                        new_etypes_list.append(num_rels + (g_i - 1) * 2 + 1)
+                        new_enorms_list.append([1.])
+                    src_list.append(th.IntTensor(new_src_list))
+                    dst_list.append(th.IntTensor(new_dst_list))
+                    edge_types_list.append(th.LongTensor(new_etypes_list))
+                    edge_norms_list.append(th.Tensor(new_enorms_list))
+                for f in new_features:
+                    if g_i == new_features.index(f):
+                        g.features[:, all_features.index(f)] = 1
+                    else:
+                        g.features[:, all_features.index(f)] = 0
             g_i += 1
 
-        # Create merged graph:
-        
-        src_nodes = th.cat(src_list, dim=0)
-        dst_nodes = th.cat(dst_list, dim=0)
-        edge_types = th.cat(edge_types_list, dim=0)
-        edge_norms = th.cat(edge_norms_list, dim=0)
-        final_graph = dgl.graph((src_nodes, dst_nodes),
-                                num_nodes=graphs_in_interval[0].n_nodes * g_i,
-                                idtype=th.int64, device=self.device)
+        try:
+            # Create merged graph:
+            src_nodes = th.cat(src_list, dim=0)
+            dst_nodes = th.cat(dst_list, dim=0)
+            edge_types = th.cat(edge_types_list, dim=0)
+            edge_norms = th.cat(edge_norms_list, dim=0)
+            final_graph = dgl.graph((src_nodes, dst_nodes),
+                                    num_nodes=n_nodes,
+                                    idtype=th.int32, device=self.device)
 
-        # Add merged features and update edge labels:
-        final_graph.ndata['h'] = th.cat(f_list, dim=0).to(self.device)
-        final_graph.edata.update({'rel_type': edge_types, 'norm': edge_norms})
+            # Add merged features and update edge labels:
+            final_graph.ndata['h'] = th.cat(f_list, dim=0).to(self.device)
+            final_graph.edata.update({'rel_type': edge_types, 'norm': edge_norms})
 
-        # Append final data
-        self.graphs.append(final_graph)
-        self.labels.append(graphs_in_interval[0].labels)
-        self.data['typemaps'].append(np.concatenate(typemap_list, axis=0))
-        self.data['coordinates'].append(np.concatenate(coordinates_list, axis=0))
+            # Append final data
+            self.graphs.append(final_graph)
+            self.labels.append(graphs_in_interval[0].labels)
+            self.data['typemaps'].append(typeMap)
+            self.data['coordinates'].append(coordinates)
+        except Exception:
+            print("Error loading one graph")
+            raise
+
     #################################################################
     # Implementation of abstract methods
     #################################################################
