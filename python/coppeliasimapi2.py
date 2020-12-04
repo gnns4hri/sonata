@@ -109,14 +109,14 @@ class RelationObject(object):
         super(RelationObject,self).__init__()
         ss = Shape.create(type=PrimitiveShape.CYLINDER, 
                               color=[1,0,0], size=[0.03, 0.02, length],
-                              position=[x, y, 2.5],orientation=[3.14,0,3.14])
-
+                              position=[x, y, 2.5],orientation=[3.14,0,3.14], 
+                              respondable=False)
         ss.set_color([0, 0, 1])
         ss.set_position([x, y, 0.0])
         ss.set_orientation([pitch,yaw,roll])  
-        #ss.set_orientation([1.57,1.57,1.57])        
         ss.set_dynamic(False)
         self.handle = ss
+
 
     def get_position(self, relative_to=None):
         return self.handle.get_position(relative_to=relative_to)
