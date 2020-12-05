@@ -461,10 +461,7 @@ class SODA():
 
         for i in range(num_relations):
 
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # temporal remove of two wandering humans interacting!!!!
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-            relation_type = random.randint(0,2) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
+            relation_type = random.randint(0,3) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
             relation_priority_list = [ (i+relation_type)%3 for i in range(3)]
             for rel in relation_priority_list:
                 if self.create_interaction(rel, n_humans, length, breadth):
@@ -542,12 +539,10 @@ class SODA():
             obj2.angle = -obj.get_orientation(relative_to=self.robot)[2]
             obj_shape = obj.get_model_bounding_box()
 
-            obj_w = obj_shape[1]*2
-            obj_h = obj_shape[3]*2
-            obj2.bbx1 = obj_w #obj_shape[0] + obj_w/4.
-            obj2.bbx2 = obj_w #obj_shape[1] - obj_w/4.
-            obj2.bby1 = obj_h #obj_shape[2] + obj_h/4.
-            obj2.bby2 = obj_h #obj_shape[3] - obj_h/4.
+            obj2.bbx1 = obj_shape[0]
+            obj2.bbx2 = obj_shape[1]
+            obj2.bby1 = obj_shape[2]
+            obj2.bby2 = obj_shape[3]
             objects.append(obj2)
             #id_available += 1
 
