@@ -358,7 +358,7 @@ class SpecificWorker(GenericWorker):
             temp_inter_dic['dst'] = inter.idDst
             temp_inter_list.append(temp_inter_dic)
                 
-        if self.initial_flag==0:
+        if self.initial_flag==0 or len(self.initial_positions_objects)!=len(self.object_data) or len(self.initial_positions)!=len(self.people_data):
             for _, obj in enumerate(self.object_data):
                 self.initial_positions_objects.append([obj.x, obj.y, obj.angle])
             for _,person in enumerate(self.people_data):
