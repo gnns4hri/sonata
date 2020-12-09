@@ -3,16 +3,29 @@ import json
 from PySide2 import QtWidgets, QtCore, QtGui
 from PySide2.QtCore import QRect
 import subprocess
-from socnavData import GenerateDataset
+from socnavData import GenerateDataset, get_features
 import math
 
 import ui_drawgraph
 
+def node_type(typemap):
+    mapping = {
+        'g': 'grid',
+        'p': 'human',
+        'o': 'object',
+        'w': 'wall',
+        'l': 'room',
+        't': 'target'
+    }
+    return mapping[typemap]
+
 
 class MainClass(QtWidgets.QWidget):
-    def __init__(self, scenarios, start):
+    def __init__(self, scenarios, start, alt):
         super().__init__()
         self.scenarios = scenarios
+        self.alt = alt
+        all_features, n_features = get_features(self.alt)
         self.ui = ui_drawgraph.Ui_SocNavWidget()
         self.ui.setupUi(self)
         self.next_index = start
@@ -20,7 +33,7 @@ class MainClass(QtWidgets.QWidget):
         self.show()
         self.installEventFilter(self)
         self.load_next()
-        self.ui.tableWidget.setRowCount(self.view.graph.features.shape[1]+1)
+        self.ui.tableWidget.setRowCount(self.view.graph.ndata['h'][0].shape[1]+1)
         self.ui.tableWidget.setColumnCount(1)
         self.ui.tableWidget.setColumnWidth(0, 200)
         self.ui.tableWidget.show()
@@ -30,9 +43,9 @@ class MainClass(QtWidgets.QWidget):
         self.ui.tableWidget.horizontalHeader().hide()
         self.ui.tableWidget.setVerticalHeaderItem(0, QtWidgets.QTableWidgetItem('type'))
         self.ui.tableWidget.setItem(0, 0, QtWidgets.QTableWidgetItem('0'))
-        features_aux = self.view.graph.features[1]
+        features_aux = self.view.graph.ndata['h'][1]
         for idx, feature in enumerate(features_aux, 1):
-            self.ui.tableWidget.setVerticalHeaderItem(idx, QtWidgets.QTableWidgetItem(self.view.graph.all_features[idx-1]))
+            self.ui.tableWidget.setVerticalHeaderItem(idx, QtWidgets.QTableWidgetItem(all_features[idx-1]))
             self.ui.tableWidget.setItem(idx, 0, QtWidgets.QTableWidgetItem('0'))
 
     def load_next(self):
@@ -68,10 +81,11 @@ class MainClass(QtWidgets.QWidget):
 
 
 class MyView(QtWidgets.QGraphicsView):
-    def __init__(self, graph, table):
+    def __init__(self, scenario, table):
         super().__init__()
         self.table = table
-        self.graph = graph
+        self.graph = scenario[0]
+        self.data = scenario[2]
         self.scene = QtWidgets.QGraphicsScene(self)
         self.nodeItems = dict()
         self.setFixedSize(1002, 1002)
@@ -83,13 +97,14 @@ class MyView(QtWidgets.QGraphicsView):
         self.scene.setSceneRect(QtCore.QRectF(-500, -500, 1000, 1000))
 
         # Draw nodes and print labels
-        for time_n, time in enumerate(self.graph.typeMap):
+        for time_n, time in enumerate(self.data['typeMap']):
             for idx, n_type in time.items():
                 # p = person
                 # r = room
                 # o = object
                 # w = wall
-                # g = goal
+                # g = grid
+                # t = target
                 index = idx + (time_n*len(time))
                 if n_type == 'p':
                     colour = QtCore.Qt.blue
@@ -241,8 +256,7 @@ class MyView(QtWidgets.QGraphicsView):
 
 if __name__ == '__main__':
 
-    dataset = GenerateDataset(sys.argv[1], mode='run', alt='1', debug=True)
-    scenarios = dataset.data
+    scenarios = GenerateDataset(sys.argv[1], mode='test', alt='2', debug=True)
 
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 2:
@@ -250,7 +264,7 @@ if __name__ == '__main__':
     else:
         start = 0
 
-    view = MainClass(scenarios, start)
+    view = MainClass(scenarios, start, alt='2')
 
     exit_code = app.exec_()
     sys.exit(exit_code)

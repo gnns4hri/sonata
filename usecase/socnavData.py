@@ -91,7 +91,7 @@ def get_relations(alt):
             rels.add(e[::-1])
         rels.add('self')
     elif alt == '2':  # With grid
-        room_set = {'l_p', 'l_o', 'l_w', 'l_g', 'p_p', 'p_o', 'p_g', 'o_g', 'w_g', 'l_t', 'l_g', 'w_p'}
+        room_set = {'l_p', 'l_o', 'l_w', 'l_g', 'p_p', 'p_o', 'p_g', 'o_g', 'w_g', 'l_t', 'l_g', 'w_p', 'g_t'}
         grid_set = {'g_c', 'g_ri', 'g_le', 'g_u', 'g_d', 'g_uri', 'g_dri', 'g_ule', 'g_dle'}
         # ^
         # |_p = person             g_ri = grid right
@@ -100,7 +100,7 @@ def get_relations(alt):
         # |_o = object             g_d = grid down
         # |_g = grid node
         # |_t = target (goal) node
-        self_edges_set = {'P', 'O', 'W', 'L'}
+        self_edges_set = {'P', 'O', 'W', 'L', 'T'}
 
         for e in list(room_set):
             room_set.add(e[::-1])
@@ -114,7 +114,6 @@ def get_relations(alt):
 
 def get_features(alt):
     all_features = None
-    node_types_one_hot = ['human', 'object', 'room', 'wall', 'goal']
     time_one_hot = ['is_t_0', 'is_t_m1', 'is_t_m2']
     time_sequence_features = ['is_first_frame', 'time_left']
     human_metric_features = ['hum_x_pos', 'hum_y_pos', 'human_a_vel', 'human_x_vel', 'human_y_vel',
@@ -130,9 +129,11 @@ def get_features(alt):
     goal_metric_features = ['goal_x_pos', 'goal_y_pos', 'goal_dist', 'goal_inv_dist']
     grid_metric_features = ['grid_x_pos', 'grid_y_pos']
     if alt == '1':
+        node_types_one_hot = ['human', 'object', 'room', 'wall', 'goal']
         all_features = node_types_one_hot + time_one_hot + time_sequence_features + human_metric_features + \
                         object_metric_features + room_metric_features + wall_metric_features + goal_metric_features
     elif alt == '2':
+        node_types_one_hot = ['human', 'object', 'room', 'wall', 'goal', 'grid']
         all_features = node_types_one_hot + time_one_hot + time_sequence_features + human_metric_features + \
                        object_metric_features + room_metric_features + wall_metric_features + goal_metric_features + \
                        grid_metric_features
@@ -147,7 +148,7 @@ def get_features(alt):
 # Function to generate the necessary data to create the grid graph
 def generate_grid_graph_data():
     # Define variables for edge types and relations
-    grid_rels = get_relations('2')
+    grid_rels, _ = get_relations('2')
     edge_types = []  # List to store the relation of each edge
     edge_norms = []  # List to store the norm of each edge
 
@@ -236,7 +237,7 @@ def generate_grid_graph_data():
     edge_norms = th.Tensor(edge_norms)
 
     return src_nodes, dst_nodes, n_nodes, features_gridGraph, edge_types, edge_norms, coordinates_gridGraph, typeMap, \
-           node_ids
+           node_ids, None
 
 # So far there is only one alternative implemented that I think is the most complete
 
@@ -586,7 +587,7 @@ def initializeAlt2(data, w_segments=[]):
 
         src_nodes.append(room_id)
         dst_nodes.append(h['id'])
-        edge_types.append(rels.index('r_l'))
+        edge_types.append(rels.index('l_p'))
         edge_norms.append([1.])
 
         typeMap[h['id']] = 'p'  # 'p' for 'person'
@@ -853,12 +854,12 @@ class GenerateDataset(DGLDataset):
                     typeMap[key + len(self.grid_data.typeMap) + (offset * g_i)] = g.typeMap[key]
                     coordinates[key + len(self.grid_data.position_by_id) + (offset * g_i)] = g.position_by_id[key]
 
-                if g == 0:
+                if g_i == 0:
                     # Add links and their labels of grid graph and first room graph
-                    src_list.append(self.grid_data.n_nodes)
-                    src_list.append(g.src_nodes)
-                    dst_list.append(self.grid_data.n_nodes)
-                    dst_list.append(g.dst_nodes)
+                    src_list.append(self.grid_data.src_nodes)
+                    src_list.append(g.src_nodes + self.grid_data.n_nodes)
+                    dst_list.append(self.grid_data.dst_nodes)
+                    dst_list.append(g.dst_nodes + self.grid_data.n_nodes)
 
                     edge_types_list.append(self.grid_data.edge_types)
                     edge_types_list.append(g.edge_types)
@@ -871,7 +872,7 @@ class GenerateDataset(DGLDataset):
 
                     # Add grid graph coordinates and typemaps
                     coordinates = {**self.grid_data.position_by_id, **coordinates}
-                    typeMap = {**self.grid_data.position_by_id, **typeMap}
+                    typeMap = {**self.grid_data.typeMap, **typeMap}
 
                     # Update number of nodes
                     n_nodes = g.n_nodes + self.grid_data.n_nodes
@@ -883,6 +884,7 @@ class GenerateDataset(DGLDataset):
                     dst_list.append(g.dst_nodes + (offset * g_i) + self.grid_data.n_nodes)
                     edge_types_list.append(g.edge_types)
                     edge_norms_list.append(g.edge_norms)
+
                     # Temporal connections and edges labels
                     new_src_list = []
                     new_dst_list = []
@@ -918,18 +920,18 @@ class GenerateDataset(DGLDataset):
                 for r_n_id in range(1, g.n_nodes):
                     r_n_type = g.typeMap[r_n_id]
                     x, y = g.position_by_id[r_n_id]
-                    closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width, grid_width, 25.,
-                                                               x * 1000,
-                                                               y * 1000)
+                    closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width, grid_width,
+                                                               25., x*100, y*100)
                     for g_id in closest_grid_nodes_id:
-                        src_list.append(th.IntTensor(g_id))
-                        dst_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset * g_i)))
+                        src_list.append(th.IntTensor([g_id]))
+                        dst_list.append(th.IntTensor([r_n_id + self.grid_data.n_nodes + (offset * g_i)]))
                         edge_types_list.append(th.LongTensor([rels.index('g_' + r_n_type)]))
                         edge_norms_list.append(th.Tensor([[1.]]))
 
-                        src_list.append(th.IntTensor(r_n_id + self.grid_data.n_nodes + (offset * g_i)))
-                        dst_list.append(th.IntTensor(g_id))
+                        src_list.append(th.IntTensor([r_n_id + self.grid_data.n_nodes + (offset * g_i)]))
+                        dst_list.append(th.IntTensor([g_id]))
                         edge_types_list.append(th.LongTensor([rels.index(r_n_type + '_g')]))
+                        edge_norms_list.append(th.Tensor([[1.]]))
 
             # Alternatives without grid
             else:
@@ -974,7 +976,6 @@ class GenerateDataset(DGLDataset):
 
     def final_graph_from_json(self, ds_file, linen):
         all_features, n_features = get_features(self.alt)
-        new_features = ['is_t_0', 'is_t_m1', 'is_t_m2']
         frames_in_interval = []
         graphs_in_interval = []
 
