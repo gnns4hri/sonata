@@ -3,7 +3,7 @@ import json
 from PySide2 import QtWidgets, QtCore, QtGui
 from PySide2.QtCore import QRect
 import subprocess
-from socnavData import GenerateDataset, get_features
+from socnavData import GenerateDataset, get_features, get_relations
 import math
 
 import ui_drawgraph
@@ -33,7 +33,7 @@ class MainClass(QtWidgets.QWidget):
         self.show()
         self.installEventFilter(self)
         self.load_next()
-        self.ui.tableWidget.setRowCount(self.view.graph.ndata['h'][0].shape[1]+1)
+        self.ui.tableWidget.setRowCount(self.view.graph.ndata['h'].shape[1]+1)
         self.ui.tableWidget.setColumnCount(1)
         self.ui.tableWidget.setColumnWidth(0, 200)
         self.ui.tableWidget.show()
@@ -55,7 +55,11 @@ class MainClass(QtWidgets.QWidget):
         if self.next_index >= len(self.scenarios):
             print("All graphs shown")
             sys.exit(0)
-        self.view = MyView(self.scenarios[self.next_index], self.ui.tableWidget)
+        typemap = self.scenarios.data['typemaps'][self.next_index]
+        coordinates = self.scenarios.data['coordinates'][self.next_index]
+        n_frames = self.scenarios.data['n_frames'][self.next_index]
+        self.view = MyView(self.scenarios[self.next_index], typemap, coordinates, n_frames,
+                           self.ui.tableWidget, self.alt)
         self.next_index += 1
         self.view.setParent(self.ui.widget)
         self.view.show()
@@ -63,7 +67,7 @@ class MainClass(QtWidgets.QWidget):
         self.show()
 
         # Initialize table with zeros
-        for idx in range(self.view.graph.features.shape[1]+2):
+        for idx in range(self.view.graph.ndata['h'].shape[1]+2):
             self.ui.tableWidget.setItem(idx, 0, QtWidgets.QTableWidgetItem('0'))
 
     def eventFilter(self, widget, event):
@@ -81,11 +85,16 @@ class MainClass(QtWidgets.QWidget):
 
 
 class MyView(QtWidgets.QGraphicsView):
-    def __init__(self, scenario, table):
+    def __init__(self, scenario, typemap, coordinates, n_frames, table, alt):
         super().__init__()
+        self.alt = alt
+        self.all_features, self.n_features = get_features(self.alt)
         self.table = table
         self.graph = scenario[0]
-        self.data = scenario[2]
+        self.label = scenario[1]
+        self.typemap = typemap
+        self.coordinates = coordinates
+        self.n_frames = n_frames
         self.scene = QtWidgets.QGraphicsScene(self)
         self.nodeItems = dict()
         self.setFixedSize(1002, 1002)
@@ -97,63 +106,76 @@ class MyView(QtWidgets.QGraphicsView):
         self.scene.setSceneRect(QtCore.QRectF(-500, -500, 1000, 1000))
 
         # Draw nodes and print labels
-        for time_n, time in enumerate(self.data['typeMap']):
-            for idx, n_type in time.items():
-                # p = person
-                # r = room
-                # o = object
-                # w = wall
-                # g = grid
-                # t = target
-                index = idx + (time_n*len(time))
-                if n_type == 'p':
-                    colour = QtCore.Qt.blue
-                    node_radius = 15
-                    x = self.graph.features[index][self.graph.all_features.index('hum_x_pos')] * 800
-                    y = self.graph.features[index][self.graph.all_features.index('hum_y_pos')] * 800
-                elif n_type == 'o':
-                    colour = QtCore.Qt.green
-                    node_radius = 10
-                    x = self.graph.features[index][self.graph.all_features.index('obj_x_pos')] * 800
-                    y = self.graph.features[index][self.graph.all_features.index('obj_y_pos')] * 800
-                elif n_type == 'r':
-                    colour = QtCore.Qt.black
-                    node_radius = 7
-                    x = 0
-                    y = 0
-                elif n_type == 'w':
-                    colour = QtCore.Qt.cyan
-                    node_radius = 10
-                    x = self.graph.features[index][self.graph.all_features.index('wall_x_pos')] * 800
-                    y = self.graph.features[index][self.graph.all_features.index('wall_y_pos')] * 800
-                elif n_type == 'g':
-                    colour = QtCore.Qt.darkRed
-                    node_radius = 10
-                    x = self.graph.features[index][self.graph.all_features.index('goal_x_pos')] * 800
-                    y = self.graph.features[index][self.graph.all_features.index('goal_y_pos')] * 800
-                else:
-                    colour = None
-                    node_radius = None
-                    x = None
-                    y = None
+        time_f = 0
+        grid_end = False
+        grid_n = 0
+        for index, n_type in self.typemap.items():
+            # p = person
+            # r = room
+            # o = object
+            # w = wall
+            # g = grid
+            # t = target
+            if n_type == 'p':
+                colour = QtCore.Qt.blue
+                node_radius = 15
+                x = self.graph.ndata['h'][index][self.all_features.index('hum_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('hum_y_pos')] * 625
+            elif n_type == 'o':
+                colour = QtCore.Qt.green
+                node_radius = 10
+                x = self.graph.ndata['h'][index][self.all_features.index('obj_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('obj_y_pos')] * 625
+            elif n_type == 'l':
+                colour = QtCore.Qt.black
+                node_radius = 7
+                x = 0
+                y = 0
+            elif n_type == 'w':
+                colour = QtCore.Qt.cyan
+                node_radius = 10
+                x = self.graph.ndata['h'][index][self.all_features.index('wall_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('wall_y_pos')] * 625
+            elif n_type == 't':
+                colour = QtCore.Qt.darkRed
+                node_radius = 10
+                x = self.graph.ndata['h'][index][self.all_features.index('goal_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('goal_y_pos')] * 625
+            elif n_type == 'g':
+                colour = QtCore.Qt.lightGray
+                node_radius = 7
+                x = self.graph.ndata['h'][index][self.all_features.index('grid_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('grid_y_pos')] * 625
+            else:
+                colour = None
+                node_radius = None
+                x = None
+                y = None
 
-                if x is not None:
-                    shift = time_n * (node_radius + 20)
-                    x += shift
-                    item = self.scene.addEllipse(x - node_radius, y - node_radius, node_radius*2,
-                                                 node_radius*2, brush=colour)
-                else:
-                    print(n_type)
-                    print("Invalid node")
-                    sys.exit(0)
+            if x is not None:
+                # if n_type != 'g' and grid_end is False:
+                #     grid_end = True
+                #     grid_n = index
+                #     time_f = 0
+                # if grid_end and (index-grid_n) % ((self.graph.number_of_nodes()-grid_n) / self.n_frames) == 0:
+                #     time_f += 1
+                #
+                # shift = time_f * (node_radius + 20)
+                # x += shift
+                item = self.scene.addEllipse(x - node_radius, y - node_radius, node_radius*2,
+                                             node_radius*2, brush=colour)
+            else:
+                print(n_type)
+                print("Invalid node")
+                sys.exit(0)
 
-                c = (x, y)
-                self.nodeItems[index] = (item, c, n_type)
+            c = (x, y)
+            self.nodeItems[index] = (item, c, n_type)
 
-                # Print labels of the nodes
-                text = self.scene.addText(n_type)
-                text.setDefaultTextColor(QtCore.Qt.magenta)
-                text.setPos(*c)
+            # Print labels of the nodes
+            text = self.scene.addText(n_type)
+            text.setDefaultTextColor(QtCore.Qt.magenta)
+            text.setPos(*c)
 
         self.setScene(self.scene)
 
@@ -189,8 +211,8 @@ class MyView(QtWidgets.QGraphicsView):
     @staticmethod
     def type_to_colour_width(rel_type, type1, type2):
         if type1 == type2:
-            if rel_type in [11, 12, 13, 14]:
-                colour = QtCore.Qt.red
+            if type1 == 'g' and type2 == 'g':
+                colour = QtCore.Qt.lightGray
                 width = 1
             else:
                 colour = QtCore.Qt.black
@@ -198,8 +220,11 @@ class MyView(QtWidgets.QGraphicsView):
         elif (type1 == 'p' and type2 == 'o') or (type1 == 'o' and type2 == 'p'):
             colour = QtCore.Qt.black
             width = 5
-        elif (type1 == 'r' or type2 == 'r') and rel_type not in [11, 12, 13, 14]:
+        elif type1 == 'l' or type2 == 'l':
             colour = QtCore.Qt.lightGray
+            width = 1
+        elif (type1 == 'g' and type2 != 'g') or (type2 == 'g' and type1 != 'g'):
+            colour = QtCore.Qt.red
             width = 1
         else:
             colour = None
@@ -240,7 +265,7 @@ class MyView(QtWidgets.QGraphicsView):
             if n_type == -1:
                 print('Not valid label')
             self.table.setItem(0, 0, QtWidgets.QTableWidgetItem(n_type))
-            features = self.graph.features[closest_node_id]
+            features = self.graph.ndata['h'][closest_node_id]
 
             one_hot_nodes = [str(int(x)) for x in features[0:5]]
             one_hot_times = [str(int(x)) for x in features[5:9]]
@@ -255,8 +280,9 @@ class MyView(QtWidgets.QGraphicsView):
 
 
 if __name__ == '__main__':
+    alt = '2'
 
-    scenarios = GenerateDataset(sys.argv[1], mode='test', alt='2', debug=True)
+    scenarios = GenerateDataset(sys.argv[1], mode='test', alt=alt, debug=True)
 
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 2:
@@ -264,7 +290,7 @@ if __name__ == '__main__':
     else:
         start = 0
 
-    view = MainClass(scenarios, start, alt='2')
+    view = MainClass(scenarios, start, alt=alt)
 
     exit_code = app.exec_()
     sys.exit(exit_code)

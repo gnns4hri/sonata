@@ -225,10 +225,10 @@ def generate_grid_graph_data():
             x_pos = (-area_width / 2. + (x + 0.5) * (area_width / grid_width))
             y_pos = (-area_width / 2. + (y + 0.5) * (area_width / grid_width))
             features_gridGraph[node_id, all_features.index('grid')] = 1
-            features_gridGraph[node_id, all_features.index('grid_x_pos')] = 2. * x_pos / 1000
-            features_gridGraph[node_id, all_features.index('grid_y_pos')] = -2. * y_pos / 1000
+            features_gridGraph[node_id, all_features.index('grid_x_pos')] = 2 * x_pos / 1000
+            features_gridGraph[node_id, all_features.index('grid_y_pos')] = 2 * y_pos / 1000
 
-            coordinates_gridGraph[node_id] = [x_pos / 1000, y_pos / 1000]
+            coordinates_gridGraph[node_id] = [2 * x_pos / 1000, 2 * y_pos / 1000]
 
     src_nodes = th.LongTensor(src_nodes)
     dst_nodes = th.LongTensor(dst_nodes)
@@ -594,7 +594,7 @@ def initializeAlt2(data, w_segments=[]):
         max_used_id += 1
         xpos = h['x'] / 10.
         ypos = h['y'] / 10.
-        position_by_id[h['id']] = [xpos, ypos]
+        position_by_id[h['id']] = [xpos*10, ypos*10]
         dist = math.sqrt(xpos ** 2 + ypos ** 2)
         va = h['va'] / 10.
         vx = h['vx'] / 10.
@@ -639,7 +639,7 @@ def initializeAlt2(data, w_segments=[]):
         max_used_id += 1
         xpos = o['x'] / 10.
         ypos = o['y'] / 10.
-        position_by_id[o['id']] = [xpos, ypos]
+        position_by_id[o['id']] = [xpos*10, ypos*10]
         dist = math.sqrt(xpos ** 2 + ypos ** 2)
         va = o['va'] / 10.
         vx = o['vx'] / 10.
@@ -679,7 +679,7 @@ def initializeAlt2(data, w_segments=[]):
 
     xpos = data['goal'][0]['x'] / 10.
     ypos = data['goal'][0]['y'] / 10.
-    position_by_id[goal_id] = [xpos, ypos]
+    position_by_id[goal_id] = [xpos*10, ypos*10]
     dist = math.sqrt(xpos ** 2 + ypos ** 2)
     features[goal_id, all_features.index('goal')] = 1
     features[goal_id, all_features.index('goal_x_pos')] = xpos
@@ -801,6 +801,7 @@ class GenerateDataset(DGLDataset):
         self.grid_data = None
         self.data['typemaps'] = []
         self.data['coordinates'] = []
+        self.data['n_frames'] = []
         self.debug = debug
         self.limit = loc_limit
         self.assign_data = assign_data
@@ -920,7 +921,7 @@ class GenerateDataset(DGLDataset):
                 for r_n_id in range(1, g.n_nodes):
                     r_n_type = g.typeMap[r_n_id]
                     x, y = g.position_by_id[r_n_id]
-                    closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width, grid_width,
+                    closest_grid_nodes_id = closest_grid_nodes(self.grid_data.labels, area_width*2, grid_width,
                                                                25., x*100, y*100)
                     for g_id in closest_grid_nodes_id:
                         src_list.append(th.IntTensor([g_id]))
@@ -1037,6 +1038,7 @@ class GenerateDataset(DGLDataset):
                 self.labels.append(graphs_in_interval[0].labels)
                 self.data['typemaps'].append(typeMap)
                 self.data['coordinates'].append(coordinates)
+                self.data['n_frames'].append(len(graphs_in_interval))
 
             except Exception:
                 print(frame)
@@ -1073,6 +1075,7 @@ class GenerateDataset(DGLDataset):
             self.labels.append(graphs_in_interval[0].labels)
             self.data['typemaps'].append(typeMap)
             self.data['coordinates'].append(coordinates)
+            self.data['n_frames'].append(len(graphs_in_interval))
         except Exception:
             print("Error loading one graph")
             raise
