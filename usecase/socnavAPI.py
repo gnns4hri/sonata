@@ -89,7 +89,12 @@ class SocNavAPI(object):
 
         self.GNNmodel.load_state_dict(torch.load(os.path.dirname(__file__)+'/SOCNAV.tch', map_location = device))
         self.GNNmodel.to(self.device)
+        torch.save(self.GNNmodel.gnn_object.state_dict(), os.path.dirname(__file__)+'/newSOCNAV.tch')
         self.GNNmodel.eval()
+
+        for name, param in self.GNNmodel.named_parameters():
+            print(name, param)
+
 
         if dataset is not None:
             self.test_dataloader = DataLoader(dataset, batch_size=1, collate_fn=collate)

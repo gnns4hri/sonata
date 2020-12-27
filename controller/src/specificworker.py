@@ -286,7 +286,7 @@ class SpecificWorker(GenericWorker):
                 graph = GenerateDataset(new_data, '1', 'test', i_frame = self.i_frame)
                 results = self.model.predictOneGraph(graph)[0]
                 adv = results[0].item()*3.5
-                rot = results[2].item()*4.
+                rot = results[1].item()*4.
                 self.omnirobot_proxy.setSpeedBase(adv, 0, rot)
                 if len(new_data)==N_INTERVALS and i+1 < len(self.updates_list):
                     for r in range(i+1, len(self.updates_list)):

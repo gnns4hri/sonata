@@ -288,9 +288,9 @@ def initializeAlt1(data, w_segments=[]):
     dst_nodes = []  # List to store destiny nodes
 
     # Labels
-    labels = np.array(data['command'])
+    labels = np.array([data['command'][0], data['command'][2]])
     labels[0] = labels[0] / MAX_ADV
-    labels[2] = labels[2] / MAX_ROT
+    labels[1] = labels[1] / MAX_ROT
 
     # room (id 0)
     room_id = 0

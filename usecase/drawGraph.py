@@ -144,13 +144,13 @@ class MyView(QtWidgets.QGraphicsView):
             elif n_type == 'g':
                 colour = QtCore.Qt.lightGray
                 node_radius = 7
-                x = self.graph.ndata['h'][index][self.all_features.index('grid_x_pos')] * 625
-                y = self.graph.ndata['h'][index][self.all_features.index('grid_y_pos')] * 625
+                x = self.graph.ndata['h'][index][self.all_features.index('goal_x_pos')] * 625
+                y = self.graph.ndata['h'][index][self.all_features.index('goal_y_pos')] * 625
             else:
-                colour = None
-                node_radius = None
-                x = None
-                y = None
+                colour = QtCore.Qt.white #None
+                node_radius = 5 #None
+                x = 0 #None
+                y = 0 #None
 
             if x is not None:
                 # if n_type != 'g' and grid_end is False:
@@ -227,8 +227,8 @@ class MyView(QtWidgets.QGraphicsView):
             colour = QtCore.Qt.red
             width = 1
         else:
-            colour = None
-            width = None
+            colour = QtCore.Qt.red #None
+            width = 1 #None
 
         return colour, width
 
@@ -280,9 +280,9 @@ class MyView(QtWidgets.QGraphicsView):
 
 
 if __name__ == '__main__':
-    alt = '2'
+    alt = '1'
 
-    scenarios = GenerateDataset(sys.argv[1], mode='test', alt=alt, debug=True)
+    scenarios = GenerateDataset(sys.argv[1], mode='test', raw_dir='', alt=alt, debug=True)
 
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 2:

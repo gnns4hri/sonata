@@ -136,7 +136,7 @@ def main(training_file, dev_file, test_file, graph_type=None, net=None, epochs=N
     for _ in range(5):
         print(f'TIME {time_dataset_b - time_dataset_a}')
 
-    _, num_rels = socnavData.get_relations()
+    _, num_rels = socnavData.get_relations('1')
     num_rels +=  (socnavData.N_INTERVALS-1)*2
     cur_step = 0
     best_loss = -1
@@ -325,7 +325,7 @@ if __name__ == '__main__':
                          epochs=500,
                          patience=5,
                          batch_size=20, #40,
-                         num_hidden=[50, 40, 30, 15, 3], #[25, 20, 20, 15, 10, 3],
+                         num_hidden=[50, 40, 30, 15, 2], #[25, 20, 20, 15, 10, 3],
                          heads=[15,15, 1, 1, 10], #[15, 15, 10, 8, 8, 6],
                          residual=False,
                          lr=0.0005,

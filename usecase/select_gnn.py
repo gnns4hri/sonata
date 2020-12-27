@@ -139,7 +139,7 @@ class SELECT_GNN(torch.nn.Module):
         base_index = 0
         batch_number = 0
         unbatched = dgl.unbatch(self.g)
-        output = torch.Tensor(size=(len(unbatched), 3))
+        output = torch.Tensor(size=(len(unbatched), 2))
         for g in unbatched:
             num_nodes = g.number_of_nodes()
             output[batch_number, :] = logits[base_index, :] # Output is just the room's node
