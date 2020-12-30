@@ -34,6 +34,7 @@ class HumanMovementRandomiser(object):
         self.last_update = time.time()-self.period
         self.moving_alone = True
         self.friend = None
+        self.new_position = False
 
     def moving_with_friend(self, friend = None):
         self.moving_alone = False
@@ -45,26 +46,39 @@ class HumanMovementRandomiser(object):
             return
 
         pos1 = self.human.get_position()
+        distance1_to_robot = math.sqrt((pos1[0]-robot_position[0])**2 + (pos1[1]-robot_position[1])**2)
+        distance2_to_robot = distance1_to_robot
         if not self.moving_alone:
             pos2 = self.friend.get_position()
             center = (pos1+pos2)/2.0
             length = math.sqrt(sum([(a - b) ** 2 for a, b in zip(pos1, pos2)]))
             orientation = math.atan2(pos2[1]-pos1[1], pos2[0]-pos1[0]) + math.pi/2.0
             relations_moving_humans[relation_to_human_map].move(center[0],center[1],0.0,math.pi/2.0,orientation,math.pi/2.0,length)
+            distance2_to_robot = math.sqrt((pos2[0]-robot_position[0])**2 + (pos2[1]-robot_position[1])**2)
+
+        if self.human.distance_to_goal()<0.001:
+            self.new_position = False
 
         t = time.time()
         if t-self.last_update > self.period:
             self.last_update = t
-            self.move_human(position_list, boundary)
+            if distance1_to_robot>=0.8 and distance2_to_robot>=0.8:
+                self.move_human(position_list, boundary)
+                self.new_position = True
         else:
-            distance1_to_robot = math.sqrt((pos1[0]-robot_position[0])**2 + (pos1[1]-robot_position[1])**2)
-            distance2_to_robot = distance1_to_robot
-            if not self.moving_alone:
-                distance2_to_robot = math.sqrt((pos2[0]-robot_position[0])**2 + (pos2[1]-robot_position[1])**2)
-            if distance1_to_robot<1.5 or distance2_to_robot<1.5:
-                self.human.stop()
+            if distance1_to_robot<0.8 or distance2_to_robot<0.8:
+                if self.new_position:
+                    self.human.stop()
+                    self.human.cannot_move()
+                    if not self.moving_alone:
+                        self.friend.stop()
+                        self.friend.cannot_move()
+                    self.new_position = False
+            else:
+                self.human.can_move()
                 if not self.moving_alone:
-                    self.friend.stop()
+                    self.friend.can_move()
+
 
     def move_human(self, position_list, boundary):
         px = 6.*(random.random()-0.5)

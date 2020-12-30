@@ -2,7 +2,7 @@
 import os
 import sys
 import numpy as np
-from math import cos, sin, atan2
+from math import cos, sin, atan2, sqrt
 from os import path
 import time
 from typing import List, Tuple, Sequence
@@ -155,18 +155,38 @@ class Human(object):
                 self.dummy_handle = child.get_parent()
                 # self.dummy_handle._set_property(prop_type: int, value: bool) -> None:
 
+        pos = self.handle.get_position()
+        self.ss1 = Shape.create(type=PrimitiveShape.CONE, 
+                              color=[1,0,0], size=[0.75, 0.75, 0.0015],
+                              position=[pos[0], pos[1], 0],orientation=[3.14,0,3.14])
+        self.ss1.set_color([1, 0, 0])
+        self.ss1.set_position([pos[0], pos[1], 0])
+        self.ss1.set_orientation([3.14,0,3.14])        
+        self.ss1.set_dynamic(False)
+        self.ss1.set_renderable(False)
+
+
     def set_position(self, position, relative_to=None):
         self.handle.set_position(position, relative_to)
         self.move(position, relative_to)
+        self.ss1.set_position([position[0], position[1], 0])
 
     def set_orientation(self, position, relative_to=None):
         self.handle.set_orientation(position, relative_to)
 
     def move(self, position, relative_to=None ):
         self.dummy_handle.set_position(position, relative_to)
+        self.ss1.set_renderable(False)
 
     def stop(self):
         self.dummy_handle.set_position([0,0,0], relative_to=self.handle)
+        self.ss1.set_position([0,0,0], relative_to=self.handle)
+        
+    def can_move(self):
+        self.ss1.set_renderable(False)
+
+    def cannot_move(self):
+        self.ss1.set_renderable(True)
 
     def get_position(self, relative_to=None):
         return self.handle.get_position(relative_to=relative_to)
@@ -177,9 +197,14 @@ class Human(object):
     def get_handle(self):
         return self.handle._handle
 
+    def distance_to_goal(self):
+        pos = self.dummy_handle.get_position(relative_to=self.handle)
+        return sqrt(pos[0]*pos[0]+pos[1]*pos[1])
+
     def remove(self):
         self.dummy_handle.remove()
         self.handle.remove()
+        self.ss1.remove()
 
     def check_collision(self, obj):
         if type(obj)==type(self):
