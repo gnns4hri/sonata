@@ -69,10 +69,12 @@ class HumanMovementRandomiser(object):
             if distance1_to_robot<0.8 or distance2_to_robot<0.8:
                 if self.new_position:
                     self.human.stop()
-                    self.human.cannot_move()
+                    if distance1_to_robot<0.8:
+                        self.human.cannot_move()
                     if not self.moving_alone:
                         self.friend.stop()
-                        self.friend.cannot_move()
+                        if distance2_to_robot<0.8:
+                            self.friend.cannot_move()
                     self.new_position = False
             else:
                 self.human.can_move()
@@ -476,7 +478,7 @@ class SODA():
         for i in range(num_relations):
 
             relation_type = random.randint(0,3) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
-            relation_priority_list = [ (i+relation_type)%3 for i in range(3)]
+            relation_priority_list = [ (i+relation_type)%4 for i in range(4)]
             for rel in relation_priority_list:
                 if self.create_interaction(rel, n_humans, length, breadth):
                     break
@@ -703,7 +705,7 @@ class SODA():
                         self.relations.append(cylinder)
 
         elif relation_type == 3:
-            
+            #print("trying to create wandering humans interacting")
             if self.wandering_humans_indices.count(0)>=2 : #wandering human-human (CHECKS: wandering human list not empty)
                 for i in range(len(self.wandering_humans_indices)):
                     if self.wandering_humans_indices[i] == 0:
@@ -728,7 +730,7 @@ class SODA():
                         self.relation_to_human_map[ind_1] = len(self.relations_moving_humans)-1
                         self.relation_to_human_map[ind_2] = len(self.relations_moving_humans)-1
                 else:
-                    ind_h,ind_p, flag = self.wandering_human_interacting(length, breadth, ind_1, ind_2)
+                    ind_1, ind_2, flag = self.wandering_human_interacting(length, breadth, ind_1, ind_2)
                     if flag:
                         self.wandering_humans_indices[ind_1] = 1
                         self.wandering_humans_indices[ind_2] = 1
