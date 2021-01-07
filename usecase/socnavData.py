@@ -484,22 +484,6 @@ def initializeAlt1(data, w_segments=[]):
         edge_types.append(rels.index(typeLinv))
         edge_norms.append([1.])
 
-    # Edges for the room node (Global Node)
-    for node_id in range(n_nodes):
-        typeLdir = typeMap[room_id] + '_' + typeMap[node_id]
-        typeLinv = typeMap[node_id] + '_' + typeMap[room_id]
-        if node_id == room_id:
-            continue
-
-        src_nodes.append(room_id)
-        dst_nodes.append(node_id)
-        edge_types.append(rels.index(typeLdir))
-        edge_norms.append([1.])
-
-        src_nodes.append(node_id)
-        dst_nodes.append(room_id)
-        edge_types.append(rels.index(typeLinv))
-        edge_norms.append([1. / max_used_id])
 
     # self edges
     for node_id in range(n_nodes - 1):
