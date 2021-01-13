@@ -495,6 +495,7 @@ class SODA():
 
         return self.data, self.wandering_humans
 
+
     def get_simulation_timestep(self):
         return self.coppelia.get_simulation_timestep()
 
@@ -940,3 +941,241 @@ class SODA():
     def set_entity_orientation(self):
         ang = random.uniform(-180, 180)
         return float(ang*math.pi/180.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def room_setup_sc1(self):
+        self.coppelia.remove_objects(self.humans,self.tables,self.laptops,self.plants, self.goal,self.walls, self.relations, self.relations_moving_humans)
+        
+        self.interacting_humans = []
+
+        self.data = self.ini_data
+        self.object_list = []
+        self.position_list = [] # checking collision for wandering humans (has plants tables and static humans)
+        
+        self.humans = []
+        self.wandering_humans = []
+        self.tables = []
+        self.plants = []
+        self.laptops = []
+        self.relations = []
+        self.relations_moving_humans = []
+        self.relation_to_human_map = {}
+        self.wall_type = random.randint(0,2) # 0 for square, 1 for rectangle, 2 for L-shaped
+        self.boundary = None
+        self.human_indices = []
+        self.table_indices = []
+        self.plant_indices = []
+        self.wandering_humans_indices = []
+        self.length = None
+        self.breadth = None
+        self.break_point = 5 # when to stop creating an entity
+        self.count = 0 # storing count till break point
+        self.n_interactions = None
+        
+        self.humans_IND = []
+        self.tables_IND = []
+        self.plants_IND = []
+        self.laptops_IND = []
+        self.walls_IND = []
+
+        
+        IND = 1
+        
+        #Add four walls
+        self.wall_type = 1
+        breadth = 8.
+        length = 8.
+        self.walls_data = [([ length/2,   breadth/2, 0.4], [ length/2, -breadth/2, 0.4]),
+                    ([ length/2, -breadth/2, 0.4], [-length/2, -breadth/2, 0.4]),
+                    ([-length/2, -breadth/2, 0.4], [-length/2,  breadth/2, 0.4]),
+                    ([-length/2,  breadth/2, 0.4], [ length/2,  breadth/2, 0.4])]
+
+
+
+        poly = []
+        for i in range(len(self.walls_data)):
+            if self.wall_type==2 and i==len(self.walls_data)-1:
+                break
+            poly.append((self.walls_data[i][0][0],self.walls_data[i][0][1]))
+
+        self.boundary = Polygon(poly)
+
+        self.walls = [ self.coppelia.create_wall(w[0], w[1]) for w in self.walls_data ]
+        self.data['walls'] = []
+        
+        for w in self.walls:
+            self.walls_IND.append(IND)
+            self.data['walls'].append(w)
+            self.object_list.append(w)
+            IND = IND + 1
+
+        
+        # Adding threshold
+        breadth = 0
+        if self.wall_type == 0:
+            self.length = length/2 - 0.6
+            length = length/2 - 0.6
+        elif self.wall_type == 1:
+            self.length = length/2 - 0.6
+            length = length/2 - 0.6
+            self.breadth = breadth/2 - 0.6
+            breadth = breadth/2 - 0.6
+        elif self.wall_type:
+            self.length = length - 0.6
+            length = length - 0.6
+
+        #Add Goal
+        x,y = 0, 4
+        self.goal_data = [x,y]
+        self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
+        self.data['goal']=[self.goal]
+        self.object_list.append(self.goal)
+
+
+        self.robot = YouBot()
+        x,y = 0, -4
+        self.robot.set_orientation([0,0,0])
+        self.object_list.append(self.robot)
+
+        for child in self.coppelia.get_objects_in_tree():
+            name = child.get_name() 
+            if name == 'camera_fr':
+                camera_fr = child
+                camera_fr.set_parent(self.robot, keep_in_place=False)
+                camera_fr.set_model(self.robot)
+                camera_fr.set_position([0.0, 0.0, 0.0], relative_to=self.robot)
+                camera_fr.set_orientation([0.0, 0.0, pi])
+                camera_fr.set_model_respondable(False)
+                camera_fr.set_model_dynamic(False)
+                camera_fr.set_collidable(False)
+                camera_fr.set_measurable(False)
+                camera_fr.set_model_collidable(False)
+                camera_fr.set_model_measurable(False)
+            elif name == "Vision_sensor":
+                vision_sensor = child
+                entity_to_render = vision_sensor.get_entity_to_render()
+                far_clipping_plane = vision_sensor.get_far_clipping_plane()
+                near_clipping_plane = vision_sensor.get_near_clipping_plane()
+                perspective_angle = vision_sensor.get_perspective_angle()
+                perspective_mode = vision_sensor.get_perspective_mode()
+                render_mode = vision_sensor.get_render_mode()
+                resolution = vision_sensor.get_resolution()
+                window_size = vision_sensor.get_windowed_size()
+
+
+        a = self.coppelia.create_human()
+        x,y = 0, 3
+        ang = 0
+        p = [x,y,0]
+        a.set_position(p)
+        a.move(p)
+        a.set_orientation([0, 0, ang])
+        self.object_list.append(a)
+        self.humans_IND.append(IND)
+        IND = IND + 1
+        self.humans.append(a)
+        
+
+
+        a = self.coppelia.create_human()
+        x,y = 3,3
+        p = [x,y,0]
+        a.set_position(p)
+        a.move(p)
+        self.object_list.append(a)
+        self.humans_IND.append(IND)
+        IND = IND + 1
+        self.humans.append(a)
+
+        self.wandering_humans = []
+        for h in self.humans[1:]:
+            self.wandering_humans.append(HumanMovementRandomiser(h, 12))
+
+        self.data['humans'] = tuple(self.humans)
+
+
+        # #Add tables and laptops
+        # a = self.coppelia.load_model('small_table.ttm')
+        # b = self.coppelia.load_model('models/office items/laptop.ttm')
+        # x,y = self.set_entity_position()
+        # p_a = [x,y,0.85]
+        # p_b = [x,y,0.975]
+        # a.set_position(p_a)
+        # b.set_position(p_b)
+        # self.object_list.append(a)
+        # self.object_list.append(b)
+        # self.tables_IND.append(IND)
+        # IND = IND + 1
+        # self.tables.append(a)
+        # self.laptops.append(b)
+        
+        ##just for adding index for laptop
+        for iii in  self.laptops:
+            self.laptops_IND.append(IND)
+            IND = IND + 1
+        ##
+        
+        self.data['table'] = tuple(self.tables)
+        self.data['laptop'] = tuple(self.laptops)
+
+
+        #Add plants
+        # a = self.coppelia.load_model('models/furniture/plants/indoorPlant.ttm')
+        # x,y = self.set_entity_position()
+        # p_a = [x,y,0.165]
+        # a.set_position(p_a)
+        # self.object_list.append(a)
+        # self.plants_IND.append(IND)
+        # IND = IND + 1
+        # self.plants.append(a)
+
+        self.data['plant'] = tuple(self.plants)
+
+        for i in range(len(self.tables)):
+            self.table_indices.append(0)
+        for i in range(len(self.plants)):
+            self.plant_indices.append(0)
+        for i in range(len(self.humans)):
+            self.human_indices.append(0)
+        for i in range(len(self.wandering_humans)):
+            self.wandering_humans_indices.append(0)
+
+
+        # num_relations = random.randint(self.min_relations,self.max_relations)
+        # for i in range(num_relations):
+        #     relation_type = random.randint(0,3) # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
+        #     relation_priority_list = [ (i+relation_type)%4 for i in range(4)]
+        #     for rel in relation_priority_list:
+        #         if self.create_interaction(rel, n_humans, length, breadth):
+        #             break
+
+        for t in self.tables:
+            self.position_list.append(t.get_position())
+
+        for h in self.humans:
+            self.position_list.append(h.get_position())
+
+        for p in self.plants:
+            self.position_list.append(p.get_position())
+
+
+        return self.data, self.wandering_humans
+
+
+
+
+
