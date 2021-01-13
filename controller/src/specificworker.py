@@ -20,6 +20,9 @@
 #
 
 
+TEST_MODE = False
+
+
 from genericworker import *
 
 import os
@@ -54,7 +57,9 @@ from ui_configuration import *
 from contributor_GUI import *
 
 sys.path.append(os.path.join(os.path.dirname(__file__),'../../usecase'))
-from socnavAPI import *
+
+if TEST_MODE:
+    from socnavAPI import *
 from socnavData import *
 
 class SpecificWorker(GenericWorker):
@@ -63,7 +68,7 @@ class SpecificWorker(GenericWorker):
         os.system('bash ../joystick.sh &')
         os.system('bash ../simulator.sh &')
         self.timer.timeout.connect(self.compute)
-        self.TEST_MODE = True
+        self.TEST_MODE = TEST_MODE
         self.i_frame = 0
         if self.TEST_MODE:
             self.model = SocNavAPI('.', None)
