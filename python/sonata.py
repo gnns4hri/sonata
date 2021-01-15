@@ -1039,7 +1039,7 @@ class SODA():
             length = length - 0.6
 
         #Add Goal
-        x,y = 0, 4
+        x,y = 0, 3.3
         self.goal_data = [x,y]
         self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
         self.data['goal']=[self.goal]
@@ -1078,7 +1078,7 @@ class SODA():
 
 
         a = self.coppelia.create_human()
-        x,y = 0, 3
+        x,y = 0, 2
         ang = 0
         p = [x,y,0]
         a.set_position(p)
@@ -1092,7 +1092,7 @@ class SODA():
 
 
         a = self.coppelia.create_human()
-        x,y = 3,3
+        x,y = 3.2,2.8
         p = [x,y,0]
         a.set_position(p)
         a.move(p)
