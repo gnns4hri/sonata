@@ -2289,9 +2289,9 @@ class SODA:
             a = self.coppelia.create_human()
             import math
 
-            orientation = 3.141592 / 6.0 * index
-            x = 3.5 * math.cos(orientation)
-            y = 3.5 * math.sin(orientation) - 3.1
+            orientation = math.pi / 6.0 * index
+            x = 3.3 * math.cos(orientation)
+            y = 3.3 * math.sin(orientation) - 3.0
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -orientation])
@@ -2467,8 +2467,8 @@ class SODA:
             import math
 
             orientation = -3.141592 / 6.0 * index
-            x = 3.5 * math.cos(orientation)
-            y = 3.5 * math.sin(orientation) + 3.1
+            x = 3.3 * math.cos(orientation)
+            y = 3.3 * math.sin(orientation) + 3.0
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -orientation])
