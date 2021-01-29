@@ -1485,7 +1485,6 @@ class SODA:
             a.move([3.6, y, 0])
 
         self.data["humans"] = tuple(self.humans)
-
         self.data["table"] = tuple(self.tables)
         self.data["laptop"] = tuple(self.laptops)
 
@@ -1531,7 +1530,6 @@ class SODA:
         )
 
         self.interacting_humans = []
-
         self.data = self.ini_data
         self.object_list = []
         self.position_list = (
@@ -1784,14 +1782,27 @@ class SODA:
         IND = 1
 
         # Add four walls
-        self.wall_type = 1
-        breadth = 8.0
-        length = 8.0
+        self.wall_type = 2
+        breadth = 4.0
+        length = 4.0
         self.walls_data = [
-            ([length / 2, breadth / 2, 0.4], [length / 2, -breadth / 2, 0.4]),
-            ([length / 2, -breadth / 2, 0.4], [-length / 2, -breadth / 2, 0.4]),
-            ([-length / 2, -breadth / 2, 0.4], [-length / 2, breadth / 2, 0.4]),
-            ([-length / 2, breadth / 2, 0.4], [length / 2, breadth / 2, 0.4]),
+            (
+                [length, -length, 0.4],
+                [length, -2 * length, 0.4],
+            ),  # bottom right connecting the upper right most
+            (
+                [length, -2 * length, 0.4],
+                [2 * length, -2 * length, 0.4],
+            ),  # upper right most
+            (
+                [2 * length, -2 * length, 0.4],
+                [2 * length, -length, 0.4],
+            ),  # up right connecting the upper right most
+            ([2 * length, -length, 0.4], [2 * length, length, 0.4]),  # top
+            ([2 * length, length, 0.4], [length, length, 0.4]),  # up left
+            ([length, length, 0.4], [-length, length, 0.4]),  # left bottom
+            ([-length, length, 0.4], [-length, -length, 0.4]),  # bottom
+            ([-length, -length, 0.4], [length, -length, 0.4]),  # right bottom
         ]
 
         poly = []
@@ -1863,12 +1874,12 @@ class SODA:
                 window_size = vision_sensor.get_windowed_size()
 
         self.wandering_humans = []
-        for y in [-1.0, -2.0, 0.5]:
+        for index, y in enumerate([-1.0, -2.0, 0.5, 0.2]):
             if num_of_humans == 0:
                 break
             num_of_humans -= 1
             a = self.coppelia.create_human()
-            x = -3.0
+            x = -3.2 + index / 5
             p = [x, y, 0]
             a.set_position(p)
             self.object_list.append(a)
@@ -1876,12 +1887,12 @@ class SODA:
             IND = IND + 1
             self.humans.append(a)
             # a.move([-x, -y, 0])
-        for x in [-1.0, 2.0]:
+        for x in [-1.0, 2.0, 3.0]:
             if num_of_humans == 0:
                 break
             num_of_humans -= 1
             a = self.coppelia.create_human()
-            y = 2.0
+            y = -2.0
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -3.141592 / 2.0])
@@ -1890,12 +1901,12 @@ class SODA:
             IND = IND + 1
             self.humans.append(a)
 
-        for x in [0.4, 1.2, 2.6, 3.4]:
+        for index, x in enumerate([0.4, -1.2, 2.6, -3.4, 2.3]):
             if num_of_humans == 0:
                 break
             num_of_humans -= 1
             a = self.coppelia.create_human()
-            y = 1.9
+            y = 1.9 + index * 0.3
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, 3.141592 / 2.0])
@@ -1904,7 +1915,7 @@ class SODA:
             IND = IND + 1
             self.humans.append(a)
 
-        for y in [0.4, 1.2, 2.6, 3.4]:
+        for y in [-2.4, 1.2]:
             if num_of_humans == 0:
                 break
             num_of_humans -= 1
@@ -1917,6 +1928,44 @@ class SODA:
             self.humans_IND.append(IND)
             IND = IND + 1
             self.humans.append(a)
+
+        if num_of_humans != 0:
+            num_of_humans -= 1
+            a = self.coppelia.create_human()
+            x = 4.5
+            y = -5.0
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -3.141592 / 2.0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+        if num_of_humans != 0:
+            num_of_humans -= 1
+            a = self.coppelia.create_human()
+            x = 3.8
+            y = -4.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -3.141592 / 2.0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+        if num_of_humans != 0:
+            num_of_humans -= 1
+            a = self.coppelia.create_human()
+            x = 3.9
+            y = -4.0
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -3.141592 / 2.0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
         self.data["humans"] = tuple(self.humans)
 
         ##just for adding index for laptop
@@ -1969,97 +2018,7 @@ class SODA:
         return self.data, self.wandering_humans
 
     def room_setup_2(self):
-        self.coppelia.remove_objects(
-            self.humans,
-            self.tables,
-            self.laptops,
-            self.plants,
-            self.goal,
-            self.walls,
-            self.relations,
-            self.relations_moving_humans,
-        )
-
-        self.interacting_humans = []
-
-        self.data = self.ini_data
-        self.object_list = []
-        self.position_list = (
-            []
-        )  # checking collision for wandering humans (has plants tables and static humans)
-
-        self.humans = []
-        self.wandering_humans = []
-        self.tables = []
-        self.plants = []
-        self.laptops = []
-        self.relations = []
-        self.relations_moving_humans = []
-        self.relation_to_human_map = {}
-        self.wall_type = random.randint(
-            0, 2
-        )  # 0 for square, 1 for rectangle, 2 for L-shaped
-        self.boundary = None
-        self.human_indices = []
-        self.table_indices = []
-        self.plant_indices = []
-        self.wandering_humans_indices = []
-        self.length = None
-        self.breadth = None
-        self.break_point = 5  # when to stop creating an entity
-        self.count = 0  # storing count till break point
-        self.n_interactions = None
-
-        self.humans_IND = []
-        self.tables_IND = []
-        self.plants_IND = []
-        self.laptops_IND = []
-        self.walls_IND = []
-
-        IND = 1
-
-        # Add four walls
-        self.wall_type = 1
-        breadth = 8.0
-        length = 8.0
-        self.walls_data = [
-            ([length / 2, breadth / 2, 0.4], [length / 2, -breadth / 2, 0.4]),
-            ([length / 2, -breadth / 2, 0.4], [-length / 2, -breadth / 2, 0.4]),
-            ([-length / 2, -breadth / 2, 0.4], [-length / 2, breadth / 2, 0.4]),
-            ([-length / 2, breadth / 2, 0.4], [length / 2, breadth / 2, 0.4]),
-        ]
-
-        poly = []
-        for i in range(len(self.walls_data)):
-            if self.wall_type == 2 and i == len(self.walls_data) - 1:
-                break
-            poly.append((self.walls_data[i][0][0], self.walls_data[i][0][1]))
-
-        self.boundary = Polygon(poly)
-
-        self.walls = [self.coppelia.create_wall(w[0], w[1]) for w in self.walls_data]
-        self.data["walls"] = []
-
-        for w in self.walls:
-            self.walls_IND.append(IND)
-            self.data["walls"].append(w)
-            self.object_list.append(w)
-            IND = IND + 1
-
-        # Adding threshold
-        breadth = 0
-        if self.wall_type == 0:
-            self.length = length / 2 - 0.6
-            length = length / 2 - 0.6
-        elif self.wall_type == 1:
-            self.length = length / 2 - 0.6
-            length = length / 2 - 0.6
-            self.breadth = breadth / 2 - 0.6
-            breadth = breadth / 2 - 0.6
-        elif self.wall_type:
-            self.length = length - 0.6
-            length = length - 0.6
-
+        IND = self.initialize_room()
         # Add Goal
         x, y = 3.3, 3.3
         self.goal_data = [x, y]
@@ -2072,36 +2031,13 @@ class SODA:
         self.robot.set_orientation([0, 0, 0])
         self.object_list.append(self.robot)
 
-        for child in self.coppelia.get_objects_in_tree():
-            name = child.get_name()
-            if name == "camera_fr":
-                camera_fr = child
-                camera_fr.set_parent(self.robot, keep_in_place=False)
-                camera_fr.set_model(self.robot)
-                camera_fr.set_position([0.0, 0.0, 0.0], relative_to=self.robot)
-                camera_fr.set_orientation([0.0, 0.0, pi])
-                camera_fr.set_model_respondable(False)
-                camera_fr.set_model_dynamic(False)
-                camera_fr.set_collidable(False)
-                camera_fr.set_measurable(False)
-                camera_fr.set_model_collidable(False)
-                camera_fr.set_model_measurable(False)
-            elif name == "Vision_sensor":
-                vision_sensor = child
-                entity_to_render = vision_sensor.get_entity_to_render()
-                far_clipping_plane = vision_sensor.get_far_clipping_plane()
-                near_clipping_plane = vision_sensor.get_near_clipping_plane()
-                perspective_angle = vision_sensor.get_perspective_angle()
-                perspective_mode = vision_sensor.get_perspective_mode()
-                render_mode = vision_sensor.get_render_mode()
-                resolution = vision_sensor.get_resolution()
-                window_size = vision_sensor.get_windowed_size()
+        self.camera_setup()
 
         self.wandering_humans = []
-        for index in range(6):
+        for index in range(3):
             a = self.coppelia.create_human()
             x = -2.0
-            y = 4.0 - (4.0 / 3) * index
+            y = 4.0 - (4.0 / 5) * index
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -3.141592 / 2.0])
@@ -2111,10 +2047,10 @@ class SODA:
             a.move([x, -4.0, 0])
             self.humans.append(a)
 
-        for index in range(6):
+        for index in range(4):
             a = self.coppelia.create_human()
-            x = 2.0
-            y = 4.0 - (4.0 / 3) * index
+            x = -3.0
+            y = 0.0 - (4.0 / 5) * index
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -3.141592 / 2.0])
@@ -2123,6 +2059,32 @@ class SODA:
             IND = IND + 1
             a.move([x, -4.0, 0])
             self.humans.append(a)
+
+        for index in range(3):
+            a = self.coppelia.create_human()
+            x = 2.0
+            y = 4.0 - (4.0 / 5) * index
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -3.141592 / 2.0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([x, -4.0, 0])
+            self.humans.append(a)
+        for index in range(4):
+            a = self.coppelia.create_human()
+            x = 2.0
+            y = 0.0 - (4.0 / 3) * index
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -3.141592 / 2.0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([x, -4.0, 0])
+            self.humans.append(a)
+
         self.data["humans"] = tuple(self.humans)
 
         ##just for adding index for laptop
@@ -2135,118 +2097,12 @@ class SODA:
         self.data["laptop"] = tuple(self.laptops)
         self.data["plant"] = tuple(self.plants)
 
-        for i in range(len(self.tables)):
-            self.table_indices.append(0)
-        for i in range(len(self.plants)):
-            self.plant_indices.append(0)
-        for i in range(len(self.humans)):
-            self.human_indices.append(0)
-        for i in range(len(self.wandering_humans)):
-            self.wandering_humans_indices.append(0)
-
-        for t in self.tables:
-            self.position_list.append(t.get_position())
-
-        for h in self.humans:
-            self.position_list.append(h.get_position())
-
-        for p in self.plants:
-            self.position_list.append(p.get_position())
+        self.after_room_setup()
 
         return self.data, self.wandering_humans
 
     def room_setup_4(self):
-        self.coppelia.remove_objects(
-            self.humans,
-            self.tables,
-            self.laptops,
-            self.plants,
-            self.goal,
-            self.walls,
-            self.relations,
-            self.relations_moving_humans,
-        )
-
-        self.interacting_humans = []
-
-        self.data = self.ini_data
-        self.object_list = []
-        self.position_list = (
-            []
-        )  # checking collision for wandering humans (has plants tables and static humans)
-
-        self.humans = []
-        self.wandering_humans = []
-        self.tables = []
-        self.plants = []
-        self.laptops = []
-        self.relations = []
-        self.relations_moving_humans = []
-        self.relation_to_human_map = {}
-        self.wall_type = random.randint(
-            0, 2
-        )  # 0 for square, 1 for rectangle, 2 for L-shaped
-        self.boundary = None
-        self.human_indices = []
-        self.table_indices = []
-        self.plant_indices = []
-        self.wandering_humans_indices = []
-        self.length = None
-        self.breadth = None
-        self.break_point = 5  # when to stop creating an entity
-        self.count = 0  # storing count till break point
-        self.n_interactions = None
-
-        self.humans_IND = []
-        self.tables_IND = []
-        self.plants_IND = []
-        self.laptops_IND = []
-        self.walls_IND = []
-
-        IND = 1
-
-        # Add four walls
-        self.wall_type = 1
-        breadth = 8.0
-        length = 8.0
-        self.walls_data = [
-            ([length / 2, breadth / 2, 0.4], [length / 2, -breadth / 2, 0.4]),
-            ([length / 2, -breadth / 2, 0.4], [-length / 2, -breadth / 2, 0.4]),
-            ([-length / 2, -breadth / 2, 0.4], [-length / 2, breadth / 2, 0.4]),
-            ([-length / 2, breadth / 2, 0.4], [length / 2, breadth / 2, 0.4]),
-        ]
-
-        poly = []
-        for i in range(len(self.walls_data)):
-            if self.wall_type == 2 and i == len(self.walls_data) - 1:
-                break
-            poly.append((self.walls_data[i][0][0], self.walls_data[i][0][1]))
-
-        self.boundary = Polygon(poly)
-
-        self.walls = [self.coppelia.create_wall(w[0], w[1]) for w in self.walls_data]
-        self.data["walls"] = []
-
-        for w in self.walls:
-            self.walls_IND.append(IND)
-            self.data["walls"].append(w)
-            self.object_list.append(w)
-            IND = IND + 1
-
-        # Adding threshold
-        breadth = 0
-        if self.wall_type == 0:
-            self.length = length / 2 - 0.6
-            length = length / 2 - 0.6
-        elif self.wall_type == 1:
-            self.length = length / 2 - 0.6
-            length = length / 2 - 0.6
-            self.breadth = breadth / 2 - 0.6
-            breadth = breadth / 2 - 0.6
-        elif self.wall_type:
-            self.length = length - 0.6
-            length = length - 0.6
-
+        IND = self.initialize_room()
         # Add Goal
         x, y = 0, -3.1
         self.goal_data = [x, y]
@@ -2259,30 +2115,7 @@ class SODA:
         self.robot.set_orientation([0, 0, 0])
         self.object_list.append(self.robot)
 
-        for child in self.coppelia.get_objects_in_tree():
-            name = child.get_name()
-            if name == "camera_fr":
-                camera_fr = child
-                camera_fr.set_parent(self.robot, keep_in_place=False)
-                camera_fr.set_model(self.robot)
-                camera_fr.set_position([0.0, 0.0, 0.0], relative_to=self.robot)
-                camera_fr.set_orientation([0.0, 0.0, pi])
-                camera_fr.set_model_respondable(False)
-                camera_fr.set_model_dynamic(False)
-                camera_fr.set_collidable(False)
-                camera_fr.set_measurable(False)
-                camera_fr.set_model_collidable(False)
-                camera_fr.set_model_measurable(False)
-            elif name == "Vision_sensor":
-                vision_sensor = child
-                entity_to_render = vision_sensor.get_entity_to_render()
-                far_clipping_plane = vision_sensor.get_far_clipping_plane()
-                near_clipping_plane = vision_sensor.get_near_clipping_plane()
-                perspective_angle = vision_sensor.get_perspective_angle()
-                perspective_mode = vision_sensor.get_perspective_mode()
-                render_mode = vision_sensor.get_render_mode()
-                resolution = vision_sensor.get_resolution()
-                window_size = vision_sensor.get_windowed_size()
+        self.camera_setup()
 
         self.wandering_humans = []
         for index in range(7):
@@ -2291,7 +2124,7 @@ class SODA:
 
             orientation = math.pi / 6.0 * index
             x = 3.3 * math.cos(orientation)
-            y = 3.3 * math.sin(orientation) - 3.0
+            y = 3.3 * math.sin(orientation) - 0.8
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -orientation])
@@ -2312,27 +2145,11 @@ class SODA:
         self.data["laptop"] = tuple(self.laptops)
         self.data["plant"] = tuple(self.plants)
 
-        for i in range(len(self.tables)):
-            self.table_indices.append(0)
-        for i in range(len(self.plants)):
-            self.plant_indices.append(0)
-        for i in range(len(self.humans)):
-            self.human_indices.append(0)
-        for i in range(len(self.wandering_humans)):
-            self.wandering_humans_indices.append(0)
-
-        for t in self.tables:
-            self.position_list.append(t.get_position())
-
-        for h in self.humans:
-            self.position_list.append(h.get_position())
-
-        for p in self.plants:
-            self.position_list.append(p.get_position())
+        self.after_room_setup()
 
         return self.data, self.wandering_humans
 
-    def room_setup_5(self):
+    def initialize_room(self):
         self.coppelia.remove_objects(
             self.humans,
             self.tables,
@@ -2423,19 +2240,28 @@ class SODA:
         elif self.wall_type:
             self.length = length - 0.6
             length = length - 0.6
+        return IND
 
-        # Add Goal
-        x, y = 0, 3.1
-        self.goal_data = [x, y]
-        self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
-        self.data["goal"] = [self.goal]
-        self.object_list.append(self.goal)
+    def after_room_setup(self):
+        for i in range(len(self.tables)):
+            self.table_indices.append(0)
+        for i in range(len(self.plants)):
+            self.plant_indices.append(0)
+        for i in range(len(self.humans)):
+            self.human_indices.append(0)
+        for i in range(len(self.wandering_humans)):
+            self.wandering_humans_indices.append(0)
 
-        self.robot = YouBot()
-        x, y = 0, -4
-        self.robot.set_orientation([0, 0, 0])
-        self.object_list.append(self.robot)
+        for t in self.tables:
+            self.position_list.append(t.get_position())
 
+        for h in self.humans:
+            self.position_list.append(h.get_position())
+
+        for p in self.plants:
+            self.position_list.append(p.get_position())
+
+    def camera_setup(self):
         for child in self.coppelia.get_objects_in_tree():
             name = child.get_name()
             if name == "camera_fr":
@@ -2461,6 +2287,22 @@ class SODA:
                 resolution = vision_sensor.get_resolution()
                 window_size = vision_sensor.get_windowed_size()
 
+    def room_setup_5(self):
+        IND = self.initialize_room()
+        # Add Goal
+        x, y = 0, 3.1
+        self.goal_data = [x, y]
+        self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
+        self.data["goal"] = [self.goal]
+        self.object_list.append(self.goal)
+
+        self.robot = YouBot()
+        x, y = 0, -4
+        self.robot.set_orientation([0, 0, 0])
+        self.object_list.append(self.robot)
+
+        self.camera_setup()
+
         self.wandering_humans = []
         for index in range(7):
             a = self.coppelia.create_human()
@@ -2468,7 +2310,7 @@ class SODA:
 
             orientation = -3.141592 / 6.0 * index
             x = 3.3 * math.cos(orientation)
-            y = 3.3 * math.sin(orientation) + 3.0
+            y = 3.3 * math.sin(orientation) - 0.8
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, -orientation])
@@ -2484,27 +2326,337 @@ class SODA:
             self.laptops_IND.append(IND)
             IND = IND + 1
         ##
-
         self.data["table"] = tuple(self.tables)
         self.data["laptop"] = tuple(self.laptops)
         self.data["plant"] = tuple(self.plants)
 
-        for i in range(len(self.tables)):
-            self.table_indices.append(0)
-        for i in range(len(self.plants)):
-            self.plant_indices.append(0)
-        for i in range(len(self.humans)):
-            self.human_indices.append(0)
-        for i in range(len(self.wandering_humans)):
-            self.wandering_humans_indices.append(0)
+        return self.data, self.wandering_humans
 
-        for t in self.tables:
-            self.position_list.append(t.get_position())
+    def room_setup_3(self):
+        IND = self.initialize_room()
+        # Add Goal
+        x, y = 0, 3.1
+        self.goal_data = [x, y]
+        self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
+        self.data["goal"] = [self.goal]
+        self.object_list.append(self.goal)
 
-        for h in self.humans:
-            self.position_list.append(h.get_position())
+        self.robot = YouBot()
+        x, y = 0, -4
+        self.robot.set_orientation([0, 0, 0])
+        self.object_list.append(self.robot)
 
-        for p in self.plants:
-            self.position_list.append(p.get_position())
+        self.camera_setup()
 
+        self.wandering_humans = []
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = -3.0
+            y = 2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, -math.pi / 2])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = -3.0
+            y = -2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, math.pi / 2])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 2.7
+            y = -2.0
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, math.pi / 2])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
+        # two horizontal humans
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 3.0
+            y = 2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, math.pi])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 1.0
+            y = 2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 0
+            y = -2.6
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([3.5, -2.6, 0])
+            self.humans.append(a)
+        for index in range(2):
+            a = self.coppelia.create_human()
+            import math
+
+            x = -1.9 + 0.8 * index
+            y = 2
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([x, -4.0, 0])
+            self.humans.append(a)
+
+        ##just for adding index for laptop
+        for iii in self.laptops:
+            self.laptops_IND.append(IND)
+            IND = IND + 1
+        ##
+        self.after_room_setup()
+        ind1 = 0
+        ind2 = 1
+        print(self.human_indices, ind1, ind2)
+        self.human_indices[ind1] = 1
+        self.human_indices[ind2] = 1
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "two_static_person_talking",
+            }
+        )
+        ind1 = 3
+        ind2 = 4
+        print(self.human_indices, ind1, ind2)
+        self.human_indices[ind1] = 1
+        self.human_indices[ind2] = 1
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "two_static_person_talking",
+            }
+        )
+
+        ind1 = 6
+        ind2 = 7
+        print("--", self.human_indices, ind1, ind2)
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "wandering_human_interacting",
+            }
+        )
+
+        self.data["humans"] = tuple(self.humans)
+
+        self.data["table"] = tuple(self.tables)
+        self.data["laptop"] = tuple(self.laptops)
+        self.data["plant"] = tuple(self.plants)
+        return self.data, self.wandering_humans
+
+    def room_setup_6(self):
+        IND = self.initialize_room()
+        # Add Goal
+        x, y = 0, 3.1
+        self.goal_data = [x, y]
+        self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
+        self.data["goal"] = [self.goal]
+        self.object_list.append(self.goal)
+
+        self.robot = YouBot()
+        x, y = 0, -4
+        self.robot.set_orientation([0, 0, 0])
+        self.object_list.append(self.robot)
+
+        self.camera_setup()
+
+        self.wandering_humans = []
+        a = self.coppelia.load_model("small_table.ttm")
+        b = self.coppelia.load_model("models/office items/laptop.ttm")
+        x, y = 3.0, 2.5
+        p_a = [x, y, 0.85]
+        p_b = [x, y, 0.975]
+        a.set_position(p_a)
+        b.set_position(p_b)
+        self.object_list.append(a)
+        self.object_list.append(b)
+        self.tables_IND.append(IND)
+        IND = IND + 1
+        self.tables.append(a)
+        self.laptops.append(b)
+
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = -3.0
+            y = -2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, math.pi / 2])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
+        a = self.coppelia.load_model("small_table.ttm")
+        b = self.coppelia.load_model("models/office items/laptop.ttm")
+        x, y = 2.7, -2.5
+        p_a = [x, y, 3.142]
+        p_b = [x, y, 3.142]
+        a.set_position(p_a)
+        b.set_position(p_b)
+        self.object_list.append(a)
+        self.object_list.append(b)
+        self.tables_IND.append(IND)
+        IND = IND + 1
+        self.tables.append(a)
+        self.laptops.append(b)
+
+        # two horizontal humans
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 3.0
+            y = 2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, math.pi])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 1.0
+            y = 2.5
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            self.humans.append(a)
+
+        for index in range(1):
+            a = self.coppelia.create_human()
+            import math
+
+            x = 0
+            y = -2.6
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([3.5, -2.6, 0])
+            self.humans.append(a)
+        for index in range(2):
+            a = self.coppelia.create_human()
+            import math
+
+            x = -1.9 + 0.8 * index
+            y = 2
+            p = [x, y, 0]
+            a.set_position(p)
+            a.set_orientation([0, 0, 0])
+            self.object_list.append(a)
+            self.humans_IND.append(IND)
+            IND = IND + 1
+            a.move([x, -4.0, 0])
+            self.humans.append(a)
+
+        ##just for adding index for laptop
+        for iii in self.laptops:
+            self.laptops_IND.append(IND)
+            IND = IND + 1
+        ##
+        self.after_room_setup()
+        ind1 = 0
+        ind2 = 1
+        print(self.human_indices, ind1, ind2)
+        self.human_indices[ind1] = 1
+        self.human_indices[ind2] = 1
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "two_static_person_talking",
+            }
+        )
+        ind1 = 3
+        ind2 = 4
+        print(self.human_indices, ind1, ind2)
+        self.human_indices[ind1] = 1
+        self.human_indices[ind2] = 1
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "two_static_person_talking",
+            }
+        )
+
+        ind1 = 6
+        ind2 = 7
+        print("--", self.human_indices, ind1, ind2)
+        self.interacting_humans.append(
+            {
+                "src": self.humans_IND[ind1],
+                "dst": self.humans_IND[ind2],
+                "relationship": "wandering_human_interacting",
+            }
+        )
+
+        self.data["humans"] = tuple(self.humans)
+
+        self.data["table"] = tuple(self.tables)
+        self.data["laptop"] = tuple(self.laptops)
+        self.data["plant"] = tuple(self.plants)
         return self.data, self.wandering_humans
