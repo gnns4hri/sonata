@@ -2504,7 +2504,7 @@ class SODA:
         self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
         self.data["goal"] = [self.goal]
         self.object_list.append(self.goal)
-
+        # Place the robot
         self.robot = YouBot()
         x, y = 0, -4
         self.robot.set_orientation([0, 0, 0])
@@ -2515,7 +2515,7 @@ class SODA:
         self.wandering_humans = []
         a = self.coppelia.load_model("small_table.ttm")
         b = self.coppelia.load_model("models/office items/laptop.ttm")
-        x, y = 3.0, 2.5
+        x, y = -3.0, 2.5
         p_a = [x, y, 0.85]
         p_b = [x, y, 0.975]
         a.set_position(p_a)
@@ -2532,7 +2532,7 @@ class SODA:
             import math
 
             x = -3.0
-            y = -2.5
+            y = -1.5
             p = [x, y, 0]
             a.set_position(p)
             a.set_orientation([0, 0, math.pi / 2])
@@ -2543,9 +2543,9 @@ class SODA:
 
         a = self.coppelia.load_model("small_table.ttm")
         b = self.coppelia.load_model("models/office items/laptop.ttm")
-        x, y = 2.7, -2.5
-        p_a = [x, y, 3.142]
-        p_b = [x, y, 3.142]
+        x, y = 1.5, -3.0
+        p_a = [x, y, 0.85]
+        p_b = [x, y, 0.975]
         a.set_position(p_a)
         b.set_position(p_b)
         self.object_list.append(a)
@@ -2560,20 +2560,7 @@ class SODA:
             a = self.coppelia.create_human()
             import math
 
-            x = 3.0
-            y = 2.5
-            p = [x, y, 0]
-            a.set_position(p)
-            a.set_orientation([0, 0, math.pi])
-            self.object_list.append(a)
-            self.humans_IND.append(IND)
-            IND = IND + 1
-            self.humans.append(a)
-        for index in range(1):
-            a = self.coppelia.create_human()
-            import math
-
-            x = 1.0
+            x = 1.5
             y = 2.5
             p = [x, y, 0]
             a.set_position(p)
@@ -2582,6 +2569,26 @@ class SODA:
             self.humans_IND.append(IND)
             IND = IND + 1
             self.humans.append(a)
+
+        # Add plants
+        a = self.coppelia.load_model("models/furniture/plants/indoorPlant.ttm")
+        x, y = 3.5, 2.5
+        p_a = [x, y, 0.0]
+        a.set_position(p_a)
+        self.object_list.append(a)
+        self.plants_IND.append(IND)
+        IND = IND + 1
+        self.plants.append(a)
+
+        # Add plants
+        a = self.coppelia.load_model("models/furniture/plants/indoorPlant.ttm")
+        x, y = 2.5, -1.0
+        p_a = [x, y, 0.0]
+        a.set_position(p_a)
+        self.object_list.append(a)
+        self.plants_IND.append(IND)
+        IND = IND + 1
+        self.plants.append(a)
 
         for index in range(1):
             a = self.coppelia.create_human()
@@ -2618,44 +2625,8 @@ class SODA:
             IND = IND + 1
         ##
         self.after_room_setup()
-        ind1 = 0
-        ind2 = 1
-        print(self.human_indices, ind1, ind2)
-        self.human_indices[ind1] = 1
-        self.human_indices[ind2] = 1
-        self.interacting_humans.append(
-            {
-                "src": self.humans_IND[ind1],
-                "dst": self.humans_IND[ind2],
-                "relationship": "two_static_person_talking",
-            }
-        )
-        ind1 = 3
-        ind2 = 4
-        print(self.human_indices, ind1, ind2)
-        self.human_indices[ind1] = 1
-        self.human_indices[ind2] = 1
-        self.interacting_humans.append(
-            {
-                "src": self.humans_IND[ind1],
-                "dst": self.humans_IND[ind2],
-                "relationship": "two_static_person_talking",
-            }
-        )
-
-        ind1 = 6
-        ind2 = 7
-        print("--", self.human_indices, ind1, ind2)
-        self.interacting_humans.append(
-            {
-                "src": self.humans_IND[ind1],
-                "dst": self.humans_IND[ind2],
-                "relationship": "wandering_human_interacting",
-            }
-        )
 
         self.data["humans"] = tuple(self.humans)
-
         self.data["table"] = tuple(self.tables)
         self.data["laptop"] = tuple(self.laptops)
         self.data["plant"] = tuple(self.plants)
