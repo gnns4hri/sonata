@@ -12,7 +12,7 @@ from pyrep import PyRep
 from pyrep.objects.shape import Shape
 from pyrep.objects.object import Object
 from pyrep.const import PrimitiveShape
-# from pyrep.robots.mobiles.youbot import YouBot
+#from pyrep.robots.mobiles.youbot import YouBot
 from youbot import YouBot
 
 from shapely.geometry import Polygon
@@ -34,6 +34,7 @@ class Wall(object):
         ss.set_color([1,1,1])
         ss.set_position([x, y, 0.5])
         ss.set_dynamic(False)
+        ss.set_model(True)
         ss.rotate([0., 0., angle])
         self.handle = ss
         self.handle.set_model(True)
@@ -58,6 +59,9 @@ class Wall(object):
 
     def get_model_bounding_box(self):
         return self.handle.get_model_bounding_box()
+    
+    def set_model(self, model):
+        self.handle.set_model(model)
 
 
 
@@ -102,6 +106,9 @@ class Goal(object):
 
     def get_model_bounding_box(self):
         return self.handle.get_model_bounding_box()
+
+    def set_model(self, model):
+        self.handle.set_model(model)
 
 
 class RelationObject(object):
@@ -164,6 +171,7 @@ class Human(object):
         self.ss1.set_orientation([3.14,0,3.14])        
         self.ss1.set_dynamic(False)
         self.ss1.set_renderable(False)
+        self.set_model(True)
 
 
     def set_position(self, position, relative_to=None):
@@ -214,6 +222,10 @@ class Human(object):
 
     def get_model_bounding_box(self):
         return self.dummy_handle.get_model_bounding_box()
+
+    def set_model(self, model):
+        self.dummy_handle.set_model(model)
+
 
 class HumanOnPath(object):
     def __init__(self, handle: Object):
@@ -350,6 +362,10 @@ class CoppeliaSimAPI(PyRep):
         return poly1.intersects(poly2)
 
     def getobject_polygon(self, obj):
+        # if type(obj).__name__ is "Human":
+        #     bb = [-0.5, -0.5, 0.5, 0.5]
+        # else:
+        obj.set_model(True)
         bb = obj.get_model_bounding_box()
         pos = obj.get_position()
         poly = []

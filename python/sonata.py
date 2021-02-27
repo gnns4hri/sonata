@@ -136,7 +136,7 @@ class HumanMovementRandomiser(object):
 
 class SODA:
     def __init__(
-        self, proxy_map, data, scene_file="dataset_lowres.ttt", scene_path="../scenes/"
+        self, proxy_map, data, scene_file="dataset_new.ttt", scene_path="../scenes/"
     ):
         super(SODA, self).__init__()
         self.coppelia = CoppeliaSimAPI(
