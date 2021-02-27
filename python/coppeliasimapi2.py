@@ -362,9 +362,6 @@ class CoppeliaSimAPI(PyRep):
         return poly1.intersects(poly2)
 
     def getobject_polygon(self, obj):
-        # if type(obj).__name__ is "Human":
-        #     bb = [-0.5, -0.5, 0.5, 0.5]
-        # else:
         obj.set_model(True)
         bb = obj.get_model_bounding_box()
         pos = obj.get_position()
