@@ -20,7 +20,7 @@
 #
 
 
-TEST_MODE = False
+TEST_MODE = True
 
 
 from genericworker import *
