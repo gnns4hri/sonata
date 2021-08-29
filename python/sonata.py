@@ -136,7 +136,7 @@ class HumanMovementRandomiser(object):
 
 class SODA:
     def __init__(
-        self, proxy_map, data, scene_file="dataset.ttt", scene_path="../scenes/"
+        self, proxy_map, data, scene_file="dataset_new.ttt", scene_path="../scenes/"
     ):
         super(SODA, self).__init__()
         self.coppelia = CoppeliaSimAPI(
@@ -197,6 +197,9 @@ class SODA:
         max_plants,
         max_tables,
         max_relations,
+        robot_random_pose = True,
+        show_goal = True,
+        show_relations = True
     ):
         self.coppelia.remove_objects(
             self.humans,
@@ -285,23 +288,45 @@ class SODA:
             length = random.randint(3, 4)
             self.walls_data = [
                 (
-                    [length, -length, 0.4],
-                    [length, -2 * length, 0.4],
+                    [length / 2, -length / 2, 0.4],
+                    [length / 2, -3 * length / 2, 0.4],
                 ),  # bottom right connecting the upper right most
                 (
-                    [length, -2 * length, 0.4],
-                    [2 * length, -2 * length, 0.4],
+                    [length / 2, -3 * length / 2, 0.4],
+                    [3 * length / 2, -3 * length / 2, 0.4],
                 ),  # upper right most
                 (
-                    [2 * length, -2 * length, 0.4],
-                    [2 * length, -length, 0.4],
+                    [3 * length / 2, -3 * length / 2, 0.4],
+                    [3 * length / 2, -length / 2, 0.4],
                 ),  # up right connecting the upper right most
-                ([2 * length, -length, 0.4], [2 * length, length, 0.4]),  # top
-                ([2 * length, length, 0.4], [length, length, 0.4]),  # up left
-                ([length, length, 0.4], [-length, length, 0.4]),  # left bottom
-                ([-length, length, 0.4], [-length, -length, 0.4]),  # bottom
-                ([-length, -length, 0.4], [length, -length, 0.4]),  # right bottom
+                ([3 * length / 2, -length / 2, 0.4], [3 * length / 2, 3 * length / 2, 0.4]),  # top
+                ([3 * length / 2, 3 * length / 2, 0.4], [length / 2, 3* length / 2, 0.4]),  # up left
+                ([length / 2 , 3 * length / 2, 0.4], [-3 * length / 2, 3 * length / 2, 0.4]),  # left bottom
+                ([-3 * length / 2, 3 * length / 2, 0.4], [-3 * length / 2, -length / 2, 0.4]),  # bottom
+                ([-3 * length / 2, -length / 2, 0.4], [length / 2, -length / 2, 0.4]),  # right bottom
             ]
+
+        # elif self.wall_type == 2:
+        #     length = random.randint(3, 4)
+        #     self.walls_data = [
+        #         (
+        #             [length, -length, 0.4],
+        #             [length, -2 * length, 0.4],
+        #         ),  # bottom right connecting the upper right most
+        #         (
+        #             [length, -2 * length, 0.4],
+        #             [2 * length, -2 * length, 0.4],
+        #         ),  # upper right most
+        #         (
+        #             [2 * length, -2 * length, 0.4],
+        #             [2 * length, -length, 0.4],
+        #         ),  # up right connecting the upper right most
+        #         ([2 * length, -length, 0.4], [2 * length, length, 0.4]),  # top
+        #         ([2 * length, length, 0.4], [length, length, 0.4]),  # up left
+        #         ([length, length, 0.4], [-length, length, 0.4]),  # left bottom
+        #         ([-length, length, 0.4], [-length, -length, 0.4]),  # bottom
+        #         ([-length, -length, 0.4], [length, -length, 0.4]),  # right bottom
+        #     ]
 
         poly = []
         for i in range(len(self.walls_data)):
@@ -312,6 +337,7 @@ class SODA:
         self.boundary = Polygon(poly)
 
         self.walls = [self.coppelia.create_wall(w[0], w[1]) for w in self.walls_data]
+        print(self.walls_data)
         self.data["walls"] = []
 
         for w in self.walls:
@@ -340,18 +366,24 @@ class SODA:
         self.goal = self.coppelia.create_goal(self.goal_data[0], self.goal_data[1])
         self.data["goal"] = [self.goal]
         self.object_list.append(self.goal)
+        self.goal.set_renderable(show_goal)
 
         self.robot = YouBot()
-        x, y = self.set_entity_position()
-        while True:
-            x, y = (random.random() - 0.5) * 20.0, (random.random() - 0.5) * 20.0
-            self.robot.set_position([x, y, 0.09533682])
-            if contained_with_radius(self.boundary, Point(x, y), human_radius):
-                break
+        if robot_random_pose:
+            x, y = self.set_entity_position()
+            while True:
+                x, y = (random.random() - 0.5) * 20.0, (random.random() - 0.5) * 20.0
+                self.robot.set_position([x, y, 0.09533682])
+                if contained_with_radius(self.boundary, Point(x, y), human_radius):
+                    break
 
-        self.robot.set_orientation(
-            [8.81747201e-06, 5.42909198e-04, random.random() * 2.0 * math.pi]
-        )
+            self.robot.set_orientation(
+                [8.81747201e-06, 5.42909198e-04, random.random() * 2.0 * math.pi]
+            )
+        else:
+            self.robot.set_position([0, 0, 0.09533682])
+            self.robot.set_orientation([8.81747201e-06, 5.42909198e-04, 0.])
+
         self.object_list.append(self.robot)
 
         for child in self.coppelia.get_objects_in_tree():
@@ -543,7 +575,7 @@ class SODA:
             )  # 0 for human-human (static); 1 for human-table, 2 for human-plant, 3 for human-human (wandering)
             relation_priority_list = [(i + relation_type) % 4 for i in range(4)]
             for rel in relation_priority_list:
-                if self.create_interaction(rel, n_humans, length, breadth):
+                if self.create_interaction(rel, n_humans, length, breadth, show_relations):
                     break
 
         for t in self.tables:
@@ -668,7 +700,7 @@ class SODA:
 
         return self.data, people, objects, interactions, walls, goals[0]
 
-    def create_interaction(self, relation_type, n_humans, length, breadth):
+    def create_interaction(self, relation_type, n_humans, length, breadth, show_relations = True):
         flag = False
         if relation_type == 0:
 
@@ -703,6 +735,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_1].get_position(),
                             self.humans[ind_2].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
 
@@ -724,6 +757,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_1].get_position(),
                             self.humans[ind_2].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
 
@@ -760,6 +794,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_h].get_position(),
                             self.tables[ind_t].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
                 else:
@@ -780,6 +815,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_h].get_position(),
                             self.tables[ind_t].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
 
@@ -815,6 +851,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_h].get_position(),
                             self.plants[ind_p].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
                 else:
@@ -835,6 +872,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[ind_h].get_position(),
                             self.plants[ind_p].get_position(),
+                            show_relations
                         )
                         self.relations.append(cylinder)
 
@@ -871,6 +909,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[n_humans::][ind_1].get_position(),
                             self.humans[n_humans::][ind_2].get_position(),
+                            show_relations
                         )
                         self.relations_moving_humans.append(cylinder)
                         self.relation_to_human_map[ind_1] = (
@@ -897,6 +936,7 @@ class SODA:
                         cylinder = self.create_interaction_cylinder(
                             self.humans[n_humans::][ind_1].get_position(),
                             self.humans[n_humans::][ind_2].get_position(),
+                            show_relations
                         )
                         self.relations_moving_humans.append(cylinder)
                         self.relation_to_human_map[ind_1] = (
@@ -907,13 +947,14 @@ class SODA:
                         )
         return flag
 
-    def create_interaction_cylinder(self, pos1, pos2):
+    def create_interaction_cylinder(self, pos1, pos2, show_relations = True):
         center = (pos1 + pos2) / 2.0
         length = math.sqrt(sum([(a - b) ** 2 for a, b in zip(pos1, pos2)]))
         orientation = math.atan2(pos2[1] - pos1[1], pos2[0] - pos1[0]) + math.pi / 2.0
         cylinder = self.coppelia.create_relation(
             center[0], center[1], 0.0, math.pi / 2.0, orientation, math.pi / 2.0, length
         )
+        cylinder.set_renderable(show_relations)
         return cylinder
 
     def check_collision(self, obj, obj_list):
@@ -1104,11 +1145,18 @@ class SODA:
             y = random.uniform(-self.breadth, self.breadth)
             x = random.uniform(-self.length, self.length)
         elif self.wall_type == 2:
-            x = random.uniform(-self.length, 2 * self.length)
-            if x > self.length + 0.5:
-                y = random.uniform(-2 * self.length, self.length)
+            x = random.uniform(-3* self.length / 2, 3 * self.length / 2)
+            if x > self.length / 2 + 0.5:
+                y = random.uniform(-3 * self.length / 2, 3* self.length / 2)
             else:
-                y = random.uniform(-self.length, self.length)
+                y = random.uniform(-self.length / 2, 3 * self.length / 2)
+
+        # elif self.wall_type == 2:
+        #     x = random.uniform(-self.length, 2 * self.length)
+        #     if x > self.length + 0.5:
+        #         y = random.uniform(-2 * self.length, self.length)
+        #     else:
+        #         y = random.uniform(-self.length, self.length)
 
         return x, y
 
@@ -1763,7 +1811,7 @@ class SODA:
             self.goal,
             self.walls,
             self.relations,
-            self.relations_moving_humans,
+            self.relations_moving_humans
         )
 
         self.interacting_humans = []
@@ -2600,7 +2648,7 @@ class SODA:
             a = self.coppelia.create_human()
             import math
 
-            x = 3.5
+            x = 2.3
             y = -2.6
             p = [x, y, 0]
             a.set_position(p)

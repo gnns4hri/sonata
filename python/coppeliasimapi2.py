@@ -109,13 +109,18 @@ class Goal(object):
 
     def set_model(self, model):
         self.handle.set_model(model)
+        
+    def set_renderable(self, flag):
+        self.handle.set_renderable(flag)
+        self.handle_add.set_renderable(flag)
+    
 
 
 class RelationObject(object):
     def __init__(self,x,y,z,pitch,yaw,roll,length):
         super(RelationObject,self).__init__()
         ss = Shape.create(type=PrimitiveShape.CYLINDER, 
-                              color=[1,0,0], size=[0.03, 0.02, length],
+                              color=[1,0,0], size=[0.08, 0.02, length],
                               position=[x, y, 2.5],orientation=[3.14,0,3.14], 
                               respondable=False)
         ss.set_color([0, 0, 1])
@@ -147,6 +152,8 @@ class RelationObject(object):
         self.handle.set_position([pose_x,pose_y,pose_z])
         self.handle.set_orientation([pitch,yaw,roll])
 
+    def set_renderable(self, flag):
+        self.handle.set_renderable(flag)
 
 
 
@@ -194,7 +201,9 @@ class Human(object):
         self.ss1.set_renderable(False)
 
     def cannot_move(self):
-        self.ss1.set_renderable(True)
+        pass
+        #uncomment to show a red circle under the human when he has to stop
+        #self.ss1.set_renderable(True)
 
     def get_position(self, relative_to=None):
         return self.handle.get_position(relative_to=relative_to)

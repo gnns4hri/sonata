@@ -19,7 +19,7 @@
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys
+import sys, os
 import threading
 import time
 import ast
@@ -34,6 +34,7 @@ from pyrep.objects.object import Object
 
 import _pickle as pickle
 
+# sys.path.append(os.path.join(os.path.dirname(__file__),'../../python'))
 sys.path.append('../python')
 
 from sonata import SODA
@@ -56,7 +57,7 @@ class SpecificWorker(GenericWorker):
         }
 
 
-        self.soda = SODA(proxy_map, self.data)
+        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_lowres_top.ttt')
         self.min_max_data = {"min_humans":0, "max_humans":4,
                              "min_wandering_humans":0, "max_wandering_humans":4,
                              "min_tables":0, "max_tables":4,
@@ -72,7 +73,10 @@ class SpecificWorker(GenericWorker):
                                                                 self.min_max_data['max_wandering_humans'],
                                                                 self.min_max_data['max_plants'],
                                                                 self.min_max_data['max_tables'],
-                                                                self.min_max_data['max_relations'] )
+                                                                self.min_max_data['max_relations'],
+                                                                robot_random_pose = False,
+                                                                show_goal = False,
+                                                                show_relations = False )
 
         #Loop
         self.adv = self.rot = 0.
@@ -242,6 +246,18 @@ class SpecificWorker(GenericWorker):
         print('We should reinitialise the simulation')
         print("scene", scene)
         self.min_max_data = ast.literal_eval(scene)
+        if 'robot_random_pose' in self.min_max_data.keys() and self.min_max_data['robot_random_pose'] == 0:
+            robot_random_pose = False
+        else:
+            robot_random_pose = True
+        if 'show_goal' in self.min_max_data.keys() and self.min_max_data['show_goal'] == 0:
+            show_goal = False
+        else:
+            show_goal = True
+        if 'show_relations' in self.min_max_data.keys() and self.min_max_data['show_relations'] == 0:
+            show_relations = False
+        else:
+            show_relations = True
         print(self.min_max_data)
         self.soda.data['simulator_mutex'].acquire()
         self.data, self.wandering_humans = self.soda.room_setup(self.min_max_data['min_humans'],
@@ -253,7 +269,10 @@ class SpecificWorker(GenericWorker):
                                                                 self.min_max_data['max_wandering_humans'],
                                                                 self.min_max_data['max_plants'],
                                                                 self.min_max_data['max_tables'],
-                                                                self.min_max_data['max_relations'])
+                                                                self.min_max_data['max_relations'],
+                                                                robot_random_pose,
+                                                                show_goal,
+                                                                show_relations)
         self.soda.data['simulator_mutex'].release()
 
 
