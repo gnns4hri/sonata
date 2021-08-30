@@ -382,7 +382,7 @@ class SODA:
             )
         else:
             self.robot.set_position([0, 0, 0.09533682])
-            self.robot.set_orientation([8.81747201e-06, 5.42909198e-04, 0.])
+            self.robot.set_orientation([8.81747201e-06, 5.42909198e-04, random.randint(0, 3) * math.pi / 2.])
 
         self.object_list.append(self.robot)
 
