@@ -163,7 +163,7 @@ if __name__ == '__main__':
             topic = topicManager.retrieve("InteractionDetector")
         except IceStorm.NoSuchTopic:
             try:
-                topic = topicManager.create("InterationDetector")
+                topic = topicManager.create("InteractionDetector")
             except:
                 print('Another client created the InteractionDetector topic? ...')
     pub = topic.getPublisher().ice_oneway()
