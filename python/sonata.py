@@ -594,6 +594,7 @@ class SODA:
 
     def soda_compute(self, people, objects, walls, goals):
         self.coppelia.step()
+        frame_of_reference = self.robot
         # Get robot's position
         robot_position = self.robot.get_position()
         robot_orientation = self.robot.get_orientation()
@@ -602,8 +603,8 @@ class SODA:
         for id_available, human in zip(self.humans_IND, self.data["humans"]):
             person = Person()
             person.id = id_available - len(self.walls_IND)
-            person.x, person.y, _ = human.get_position(relative_to=self.robot)
-            person.angle = -human.get_orientation(relative_to=self.robot)[2]
+            person.x, person.y, _ = human.get_position(relative_to=frame_of_reference)
+            person.angle = -human.get_orientation(relative_to=frame_of_reference)[2]
             people.append(person)
 
         # Update humans' trajectories
@@ -623,8 +624,8 @@ class SODA:
         for id_available, obj in zip(self.tables_IND, self.data["table"]):
             obj2 = ObjectT()
             obj2.id = id_available - len(self.walls_IND)
-            obj2.x, obj2.y, _ = obj.get_position(relative_to=self.robot)
-            obj2.angle = -obj.get_orientation(relative_to=self.robot)[2]
+            obj2.x, obj2.y, _ = obj.get_position(relative_to=frame_of_reference)
+            obj2.angle = -obj.get_orientation(relative_to=frame_of_reference)[2]
             obj_shape = obj.get_model_bounding_box()
             obj2.bbx1 = -obj_shape[1]
             obj2.bbx2 = obj_shape[1]
@@ -637,8 +638,8 @@ class SODA:
         for id_available, obj in zip(self.laptops_IND, self.data["laptop"]):
             obj2 = ObjectT()
             obj2.id = id_available - len(self.walls_IND)
-            obj2.x, obj2.y, _ = obj.get_position(relative_to=self.robot)
-            obj2.angle = -obj.get_orientation(relative_to=self.robot)[2]
+            obj2.x, obj2.y, _ = obj.get_position(relative_to=frame_of_reference)
+            obj2.angle = -obj.get_orientation(relative_to=frame_of_reference)[2]
             obj_shape = obj.get_model_bounding_box()
             obj2.bbx1 = obj_shape[0]
             obj2.bbx2 = obj_shape[1]
@@ -651,8 +652,8 @@ class SODA:
         for id_available, obj in zip(self.plants_IND, self.data["plant"]):
             obj2 = ObjectT()
             obj2.id = id_available - len(self.walls_IND)
-            obj2.x, obj2.y, _ = obj.get_position(relative_to=self.robot)
-            obj2.angle = -obj.get_orientation(relative_to=self.robot)[2]
+            obj2.x, obj2.y, _ = obj.get_position(relative_to=frame_of_reference)
+            obj2.angle = -obj.get_orientation(relative_to=frame_of_reference)[2]
             obj_shape = obj.get_model_bounding_box()
 
             obj2.bbx1 = obj_shape[0]
@@ -676,8 +677,8 @@ class SODA:
 
         for id_available, wall in zip(self.walls_IND, self.data["walls"]):
             w = WallT()
-            p = wall.get_position(relative_to=self.robot)[0:2]
-            ang = wall.get_orientation(relative_to=self.robot)[2]
+            p = wall.get_position(relative_to=frame_of_reference)[0:2]
+            ang = wall.get_orientation(relative_to=frame_of_reference)[2]
             l = wall.get_length()
             w.x1 = p[0] - cos(ang) * l / 2.0
             w.y1 = p[1] - sin(ang) * l / 2.0
@@ -695,7 +696,7 @@ class SODA:
 
         for gg in self.data["goal"]:
             goall = GoalT()
-            goall.x, goall.y, _ = gg.get_position(relative_to=self.robot)
+            goall.x, goall.y, _ = gg.get_position(relative_to=frame_of_reference)
             goals.append(goall)
 
         return self.data, people, objects, interactions, walls, goals[0]

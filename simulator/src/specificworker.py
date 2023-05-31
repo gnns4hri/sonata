@@ -47,6 +47,7 @@ class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map):
         super(SpecificWorker, self).__init__(proxy_map)
 
+        print("launching simulator")
         self.data = {
         'walls': [],
         'goal': [],
@@ -56,8 +57,8 @@ class SpecificWorker(GenericWorker):
         'simulator_mutex': threading.RLock()
         }
 
-
-        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_lowres_top.ttt')
+        #self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_lowres_top.ttt')
+        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_new.ttt')
         self.min_max_data = {"min_humans":0, "max_humans":4,
                              "min_wandering_humans":0, "max_wandering_humans":4,
                              "min_tables":0, "max_tables":4,
@@ -75,7 +76,7 @@ class SpecificWorker(GenericWorker):
                                                                 self.min_max_data['max_tables'],
                                                                 self.min_max_data['max_relations'],
                                                                 robot_random_pose = False,
-                                                                show_goal = False,
+                                                                show_goal = True,
                                                                 show_relations = False )
 
         #Loop
