@@ -88,11 +88,11 @@ class HumanMovementRandomiser(object):
         t = time.time()
         if t - self.last_update > self.period:
             self.last_update = t
-            if distance1_to_robot >= 0.8 and distance2_to_robot >= 0.8:
+            if distance1_to_robot >= 1.2 and distance2_to_robot >= 1.2:
                 self.move_human(position_list, boundary)
                 self.new_position = True
         else:
-            if distance1_to_robot < 0.8 or distance2_to_robot < 0.8:
+            if distance1_to_robot < 1.2 or distance2_to_robot < 1.2:
                 if self.new_position:
                     self.human.stop()
                     if distance1_to_robot < 0.8:
@@ -123,7 +123,7 @@ class HumanMovementRandomiser(object):
             if not contained_with_radius(boundary, point, human_radius):
                 collision = True
 
-        self.human.move([px, py, -1.0])
+        self.human.move([px, py, 0]) #-1.0])
         if not self.moving_alone:
             self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
 

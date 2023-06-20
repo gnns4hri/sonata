@@ -17,7 +17,8 @@ module RoboCompJoystickAdapter
 	};
 	struct ButtonParams
 	{
-		bool clicked;
+		string name;
+		int step;
 	};
 	sequence <AxisParams> AxisList;
 	sequence <ButtonParams> ButtonsList;
@@ -26,8 +27,6 @@ module RoboCompJoystickAdapter
 		string id;
 		AxisList axes;
 		ButtonsList buttons;
-		int velAxisIndex;
-		int dirAxisIndex;
 	};
 	interface JoystickAdapter
 	{
