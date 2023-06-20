@@ -12,6 +12,7 @@ module RoboCompJoystickAdapter
 {
 	struct AxisParams
 	{
+		bool clicked;
 		string name;
 		float value;
 	};
@@ -27,6 +28,8 @@ module RoboCompJoystickAdapter
 		string id;
 		AxisList axes;
 		ButtonsList buttons;
+		int velAxisIndex;
+		int dirAxisIndex;
 	};
 	interface JoystickAdapter
 	{
