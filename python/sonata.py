@@ -136,12 +136,13 @@ class HumanMovementRandomiser(object):
 
 class SODA:
     def __init__(
-        self, proxy_map, data, scene_file="dataset_new.ttt", scene_path="../scenes/"
+        self, proxy_map, data, scene_file="dataset_new.ttt", scene_path="../scenes/", frame_of_reference = 'R'
     ):
         super(SODA, self).__init__()
         self.coppelia = CoppeliaSimAPI(
             [os.path.join(os.path.dirname(__file__), scene_path)]
         )
+        self.frame_of_reference = frame_of_reference
         self.coppelia.load_scene(scene_file, headless=True)
         self.goal_found = 0
         self.ini_data = data
@@ -594,7 +595,10 @@ class SODA:
 
     def soda_compute(self, people, objects, walls, goals):
         self.coppelia.step()
-        frame_of_reference = self.robot
+        if self.frame_of_reference == 'R':
+            frame_of_reference = self.robot
+        else:
+            frame_of_reference = None
         # Get robot's position
         robot_position = self.robot.get_position()
         robot_orientation = self.robot.get_orientation()

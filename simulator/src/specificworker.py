@@ -58,7 +58,7 @@ class SpecificWorker(GenericWorker):
         }
 
         #self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_lowres_top.ttt')
-        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_new.ttt')
+        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_new.ttt') #, frame_of_reference = 'W')
         self.min_max_data = {"min_humans":0, "max_humans":4,
                              "min_wandering_humans":0, "max_wandering_humans":4,
                              "min_tables":0, "max_tables":4,
