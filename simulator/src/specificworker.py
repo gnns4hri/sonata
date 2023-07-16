@@ -44,7 +44,7 @@ from genericworker import *
 import signal
 
 class SpecificWorker(GenericWorker):
-    def __init__(self, proxy_map):
+    def __init__(self, proxy_map, WorldFR = False):
         super(SpecificWorker, self).__init__(proxy_map)
 
         print("launching simulator")
@@ -57,8 +57,13 @@ class SpecificWorker(GenericWorker):
         'simulator_mutex': threading.RLock()
         }
 
+        if WorldFR:
+            self.frame_of_reference = 'W'
+        else:
+            self.frame_of_reference = 'R'
+
         #self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_lowres_top.ttt')
-        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_new.ttt') #, frame_of_reference = 'W')
+        self.soda = SODA(proxy_map, self.data, scene_file = 'dataset_new.ttt', frame_of_reference = self.frame_of_reference)
         self.min_max_data = {"min_humans":0, "max_humans":4,
                              "min_wandering_humans":0, "max_wandering_humans":4,
                              "min_tables":0, "max_tables":4,

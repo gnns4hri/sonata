@@ -112,8 +112,8 @@ class HumanMovementRandomiser(object):
         py = 6.0 * (random.random() - 0.5)
         pose = [px, py]
         collision = True
-
-        while collision:
+        tries = 0
+        while collision and tries < 5:
             px = 6.0 * (random.random() - 0.5)
             py = 6.0 * (random.random() - 0.5)
             pose = [px, py]
@@ -122,10 +122,12 @@ class HumanMovementRandomiser(object):
             point = Point(px, py)
             if not contained_with_radius(boundary, point, human_radius):
                 collision = True
+            tries += 1
 
-        self.human.move([px, py, 0]) #-1.0])
-        if not self.moving_alone:
-            self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
+        if not collision:
+            self.human.move([px, py, 0]) #-1.0])
+            if not self.moving_alone:
+                self.friend.move([0, 0.5, 0], relative_to=self.human.dummy_handle)
 
     def check_collision_position(self, pose, position_list):
         for p in position_list:

@@ -100,6 +100,7 @@ if __name__ == '__main__':
     elif len(params) == 1:
         params.append('--Ice.Config=config')
     ic = Ice.initialize(params)
+
     status = 0
     mprx = {}
     parameters = {}
@@ -115,6 +116,11 @@ if __name__ == '__main__':
         print('Cannot connect to IceStorm! ('+proxy+')')
         status = 1
 
+    FR = ic.getProperties().getProperty("FrameOfReference")
+    if FR == "World":
+        WorldFR = True
+    else:
+        WorldFR = False
     # Create a proxy to publish a PeopleDetector topic
     topic = False
     try:
@@ -230,7 +236,7 @@ if __name__ == '__main__':
 
     global worker
     if status == 0:
-        worker = SpecificWorker(mprx)
+        worker = SpecificWorker(mprx, WorldFR)
         worker.setParams(parameters)
     else:
         print("Error getting required connections, check config file")
